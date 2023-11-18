@@ -87,15 +87,6 @@ MEASunitslist = ["V","V","V","V","V","V","V",
     "S","V/S","V/S","V","V","V",
     "V2","V","P","P","E","E"]
 
-MEASlistLog = ["V","V","V","V","V","V","V",
-    "V","V","V","V/S","V/S","S",
-    "Hz","S","S","S","S","%",
-    "%","S",
-    "S","V/S","V/S","V","V","V",
-    "V2","V","P","P","E","E"]
-
-var1 = ""
-var2 = ""
 
 lenMEASlist = len(MEASlist)
 MEASlistIDX = 7
@@ -130,7 +121,7 @@ Buttonwidth2 = 8
 
 
 # Initialisation of general variables
-CHANNEL = 2
+CHANNEL = 1
 triggerLevel = 0.0        # triggerLevel
 STOPfrequency = 10000000.0     # Stopfrequency
 TimebasePerDiv = "0" 
@@ -249,39 +240,21 @@ def BParamList():
     global var2
     global MEASlistLog
     global MEASlistChk
-    #s = simpledialog.askstring("Trig","Enter New Level \n\n as a float eg 0.380 \n    or \n with units eg 380mV\n" ,initialvalue=prettyTrig)
+
     noOfCols = 5
     chkBoxWidth = 10
     chkBoxHeight = 1
-    print((noOfCols * chkBoxWidth) + (noOfCols * 5))
+
     frame4 = LabelFrame(root, bg = COLORyellow, background=COLORlightgrey, borderwidth=10, relief=RIDGE, text="Parameter Selector",font=(60))
     frame4.place(x = 250, y = 20, width = (noOfCols * chkBoxWidth)*8 + (noOfCols * 4)*8  , height = 310)
-    #root.title("sdfsd")
-    #frame4.pack(side=TOP, expand=1, fill=X)
     for checkers in range(len(MEASlistChk)):
-        #print (int(i / 5),(i % 5))
         cRow = int(checkers / 5) + 1
         cCol =  (checkers % 5) + 0
-        #MEASlistLog[i] = IntVar()
         Checkbutton(frame4, text=MEASlist[checkers], variable=MEASlistChk[checkers],width = chkBoxWidth, height = chkBoxHeight).grid(row = cRow, column = cCol, padx=5, pady=5)
-        #Checkbutton(frame4, text=MEASlist[i], variable=MEASlistLog[i],width = 10).pack(side=LEFT, padx=5, pady=5)
-    #var1 = IntVar()
-    #Checkbutton(frame4, text="male", variable=var1).grid(row=0, sticky=W)
-    #var2 = IntVar()
-    #Checkbutton(frame4, text="female", variable=var2).grid(row=i+1, sticky=W)
-    
-    #Button(frame4, text="V/div-", width=Buttonwidth2, command=frame4.destroy).grid(row=2, sticky=W)
-    #Button(frame4, text="Accept", width=Buttonwidth2, command=xxx).grid(row=i+2,  columnspan = 5, padx=5, pady=5)
     Button(frame4, text="Close", width=chkBoxWidth, height = chkBoxHeight,command=frame4.destroy).grid(row = cRow + 2 , column = 1,  padx=5, pady=5)
     Button(frame4, text="Select All", width=chkBoxWidth, height = chkBoxHeight,command=selAllParams).grid(row=cRow + 2,column = 2, padx=5, pady=5)
     Button(frame4, text="De-Select All", width=chkBoxWidth, height = chkBoxHeight,command=deSelAllParams).grid(row= cRow + 2, column = 3, padx=5, pady=5)
-    #Button(frame4, text="xxx", width=chkBoxWidth, height = chkBoxHeight,command=lambda: xxx(1)).grid(row= = cRow + 2, column = 4,  padx=5, pady=5)
-    #Button(frame4, text="Close", width=Buttonwidth2, command=frame4.destroy()).grid(row=i+2,  columnspan = 5, padx=5, pady=50)
-
-    #frame4.destroy()
-    #mainloop()
-    print (var1)
-    UpdateAll()          # Always Update
+    #UpdateAll()          # Always Update
     
 def xxx(varv):
     print (varv)
@@ -294,7 +267,6 @@ def deSelAllParams():
     for checkers in range(len(MEASlistChk)):
         MEASlistChk[checkers].set(0)
 
-    
 def COUPset(event):
      scope.write(":CHAN" + str(CHANNEL) + ":COUP " + COUPlist[cbC.current()]) 
      
@@ -332,7 +304,6 @@ def BSTOREtrace():
         STOREtrace = False
     UpdateTrace()           # Always Update
 
-
 def BSINGLEsweep():
     global SWEEPsingle
     global RUNstatus
@@ -345,96 +316,6 @@ def BSINGLEsweep():
         RUNstatus = 1       # we are stopped, start
     UpdateScreen()          # Always Update
 
-def BSNmode():
-    global RUNstatus
-    global SNmeasurement
-    global SNresult
-    global SNwidth
-
-    if SNwidth == 0:
-        SNwidth = 1
-        SNmeasurement = True
-    elif SNwidth == 1:
-        SNwidth = 2
-        SNmeasurement = True
-    elif SNwidth == 2:
-        SNwidth = 5
-        SNmeasurement = True
-    elif SNwidth == 5:
-        SNwidth = 10
-        SNmeasurement = True
-    elif SNwidth == 10:
-        SNwidth = 0
-        SNmeasurement = False
-
-    if RUNstatus == 0:      # Update if stopped
-        UpdateTrace()
-
-
-def BSNfreq1():
-    global RUNstatus
-    global CENTERsignalfreq
-    global SNfreqstep
-    global SNmeasurement
-
-    if SNmeasurement == False:      # Only if SN measurement is running
-        return()
-
-    CENTERsignalfreq = CENTERsignalfreq - SNfreqstep
-    if CENTERsignalfreq < 0:
-        CENTERsignalfreq = 0
-
-    if RUNstatus == 0:              # Update if stopped
-        UpdateTrace()
-
-
-def BSNfreq2():
-    global RUNstatus
-    global CENTERsignalfreq
-    global SNfreqstep
-    global SNmeasurement
-
-    if SNmeasurement == False:      # Only if SN measurement is running
-        return()
-
-    CENTERsignalfreq = CENTERsignalfreq + SNfreqstep
-    if CENTERsignalfreq > 1e6:
-        CENTERsignalfreq = 1e6
-
-    if RUNstatus == 0:              # Update if stopped
-        UpdateTrace()
-
-
-def BSNfstep1():
-    global SNfreqstep
-    global SNmeasurement
-
-    if SNmeasurement == False:      # Only if SN measurement is running
-        return()
-
-    elif SNfreqstep == 10:
-        SNfreqstep = 1
-    elif SNfreqstep == 100:
-        SNfreqstep = 10
-    elif SNfreqstep == 1000:
-        SNfreqstep = 100
-
-
-def BSNfstep2():
-    global SNfreqstep
-    global SNmeasurement
-
-    if SNmeasurement == False:      # Only if SN measurement is running
-        return()
-
-    if SNfreqstep == 1:
-        SNfreqstep = 10
-    elif SNfreqstep == 10:
-        SNfreqstep = 100
-    elif SNfreqstep == 100:
-        SNfreqstep = 1000
-
-
 def BStart():
     global RUNstatus
 
@@ -444,13 +325,8 @@ def BStart():
 
 
 def Blevel1():
-    #global VoltPerDiv
     global CHANNEL
     
-    #VPD = scope.get_channel_scale(CHANNEL)
-    #VPD = VPD / 2
-    #VPD /= 2#0.2
-    #VoltPerDiv = str(VPD)
     scope.set_channel_scale(CHANNEL, scope.get_channel_scale(CHANNEL)/2, use_closest_match=True)
 
     if RUNstatus == 0:      # Update if stopped
@@ -458,50 +334,24 @@ def Blevel1():
 
 
 def Blevel2():# Increase V/Div
-    global RUNstatus
-    global DBlevel
-    global VoltPerDiv
     global CHANNEL
     
-    VPD = scope.get_channel_scale(CHANNEL)
-    VPD *= 2#0.2
-    scope.set_channel_scale(CHANNEL, VPD, use_closest_match=True)
-    DBlevel = DBlevel + 1
+    scope.set_channel_scale(CHANNEL, scope.get_channel_scale(CHANNEL)*2, use_closest_match=True)
 
     if RUNstatus == 0:      # Update if stopped
         UpdateTrace()
 
 
 def Blevel3():
-    global RUNstatus
-    global DBlevel
-    global TimebasePerDiv
-    global CHANNEL
-        
-    SPD = scope.timebase_scale
-    SPD /= 2#0.2
-    scope.timebase_scale =  SPD
-    
-    DBlevel = DBlevel - 10
-
+    scope.timebase_scale /= 2
     if RUNstatus == 0:      # Update if stopped
         UpdateTrace()
-
 
 def Blevel4():
-    global RUNstatus
-    global DBlevel
-    global TimebasePerDiv
-    global CHANNEL
-        
-    SPD = scope.timebase_scale
-    SPD *= 2#0.2
-    scope.timebase_scale =  SPD
-    DBlevel = DBlevel + 10
+    scope.timebase_scale *= 2
 
     if RUNstatus == 0:      # Update if stopped
         UpdateTrace()
-
 
 def BStop():
     global RUNstatus
@@ -516,37 +366,23 @@ def BStop():
         RUNstatus = 3
     UpdateScreen()          # Always Update
 
-
 def BReset():
    scope.write("*RST")
    sleep(10)
-
 
 def BTriggerLevel():
     global triggerLevel
     global RUNstatus
     global CHANNEL
-    #scope.write(":TRIGger:EDGe:SOURce CHANnel" + str(CHANNEL))
-    # if (RUNstatus != 0):
-    #    showwarning("WARNING","Stop sweep first")
-    #    return()
-    #        scope.write(":TRIGger:EDGe:LEVel "+"3.800000e-01")
-    #        print(scope.query(":TRIGger:EDGe:LEVel?"))
-    #        print(Quantity(scope.query(":TRIGger:EDGe:LEVel?"),"V"))
-    #        gets = Quantity(scope.query(":TRIGger:EDGe:LEVel?"),"V")
-    #        print(Quantity("80mV"))
     triggerLevel = scope.query(":TRIGger:EDGe:LEVel?")
     prettyTrig = str(Quantity(triggerLevel,"V"))
     s = simpledialog.askstring("Trig","Enter New Level \n\n as a float eg 0.380 \n    or \n with units eg 380mV\n" ,initialvalue=prettyTrig)
-    #print(s)
     if (s == None):         # If Cancel pressed, then None
         return()
 
     try:                    # Error if for example no numeric characters or OK pressed without input (s = "")
-    
         triggerV = Quantity(s)
         triggerVvalue = triggerV.as_tuple()[0]
-        
     except:
         triggerVvalue = "error"
         print("Invalid Entry:" + s)
@@ -555,20 +391,10 @@ def BTriggerLevel():
         triggerLevel = triggerVvalue
         vScale = float(scope.query(":CHANnel" + str(CHANNEL) + ":SCALe?"))
         vOffset = float(scope.query(":CHANnel" + str(CHANNEL) + ":OFFSet?"))
-        print (type(vScale))
-        print (type(vOffset))
-        print (type(triggerLevel))
-        #a < x < b or b < x < a
-        #a = ((-5 * vScale) - vOffset)
-        #b = ((-5 * vScale) - vOffset
         if(  is_between(  ((-5 * vScale) - vOffset),     triggerLevel,      ((5 * vScale) - vOffset)    )  ):
-        #if(triggerLevel in range((-5 * vScale) - vOffset,(5 * vScale) - vOffset)): 
             scope.write(":TRIGger:EDGe:LEVel "+str(triggerLevel))
         else:
-            print ("Outside Valid ranger of " + str((-5 * vScale) - vOffset) + " to " + str((5 * vScale) - vOffset))
-
-    print (triggerLevel)
-    
+            messagebox.showinfo("WARNING","Outside Current Valid rang of " + str((-5 * vScale) - vOffset) + " to " + str((5 * vScale) - vOffset))
 
     UpdateTrace()
     
@@ -605,30 +431,6 @@ def BStopfrequency():
 
     if RUNstatus == 0:      # Update if stopped
         UpdateTrace()
-
-
-def BDBdiv1():
-    global DBdivindex
-    global RUNstatus
-
-    if (DBdivindex >= 1):
-        DBdivindex = DBdivindex - 1
-    if RUNstatus == 0:      # Update if stopped
-        UpdateTrace()
-
-
-def BDBdiv2():
-    global DBdivindex
-    global DBdivlist
-    global RUNstatus
-
-    if (DBdivindex < len(DBdivlist) - 1):
-        DBdivindex = DBdivindex + 1
-    if RUNstatus == 0:      # Update if stopped
-        UpdateTrace()
-
-
-
 
 # ============================================ Main routine ====================================================
 
@@ -670,8 +472,6 @@ def Sweep():   # Read samples and store the data into the arrays
     global measVTOP
     global measVBAS
     global CHANNEL
-    
- 
 
     while (True):                                           # Main loop
 
@@ -735,7 +535,7 @@ def Sweep():   # Read samples and store the data into the arrays
         
         measF = str(myQuantiphy(measF,MEASunitslist[cbF.current()]))
         MEASlist[cbF.current()]
-        #print("Featured:"+MEASlist[cbF.current()]+":"+measF)
+
         lF.config(text=measF )
         
         cbC.set(scope.query(":CHAN"+str(CHANNEL) + ":COUP?"))
@@ -759,10 +559,9 @@ def Sweep():   # Read samples and store the data into the arrays
             data_size = len(signals)
             scope.run()
             
-            SAMPLErate = scope.query("ACQ:SRAT?") #scope.ask_for_values(':ACQ:SRAT?')[0] #do this second
+            SAMPLErate = scope.query("ACQ:SRAT?") 
             
-            SAMPLErate = float(SAMPLErate)#.strip('\n')
-            #print ( 'Data size:', data_size,'Sample size:', SAMPLEsize, "Sample rate:", SAMPLErate )
+            SAMPLErate = float(SAMPLErate)
 
             n = 0
             SIGNAL1 = []
@@ -770,7 +569,7 @@ def Sweep():   # Read samples and store the data into the arrays
               SIGNAL1.append (translate((signals[n]), 4 * VoltPerDiv, -4 * VoltPerDiv, Y0T, Y0T+GRH))
               n += 1
 
-            UpdateAll()  
+            #UpdateAll()  #UpdateScreen()
 
             if SWEEPsingle == True:  # single sweep mode, sweep once then stop
                 SWEEPsingle = False
@@ -787,10 +586,6 @@ def Sweep():   # Read samples and store the data into the arrays
             if RUNstatus == 4:
                 RUNstatus = 1                               # Status is (re)start
             UpdateScreen()                                  # UpdateScreen() call
-            # Update Data, trace and screen
-            #print (df)
-                             # UpdateScreen() call
-
 
         # Update tasks and screens by TKinter
         root.update_idletasks()
@@ -826,11 +621,10 @@ def logData():
             
             # Prepare filename as C:\MODEL_SERIAL_YYYY-MM-DD_HH.MM.SS
             timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-            #filename = path_to_log + self.inst.identify()["model"] + "_" +  self.inst.identify()["serial"] + "_" + timestamp
             filename = path_to_log  + timestamp
 
             NoOfParamsToLog = 0
-            header = b"Timestamp" #+ MEASlist[cbF.current()].encode("utf-8") + "\n".encode("utf-8")
+            header = b"Timestamp" 
             
             for checkers in range(len(MEASlistChk)):
                 if(MEASlistChk[checkers].get()):
@@ -841,9 +635,6 @@ def logData():
                 messagebox.showinfo("No Params have been selected", "Use 'Sel Log Params' to select some values to Log")
                 bL["text"] = "LOG OFF"
                 return()
-            #Checkbutton(frame4, text=MEASlist[checkers], variable=MEASlistChk[checkers],width = chkBoxWidth, height = chkBoxHeight).grid(row = cRow, column = cCol, padx=5, pady=5)
-
-            
 
             file = open(filename +  "." + file_format, "ab")
             file.write(header) 
@@ -860,16 +651,13 @@ def logData():
                     readings += ",".encode("utf-8") + str(reading).encode("utf-8")
             readings += "\n".encode("utf-8")
             file = open(filename +  "." + file_format, "ab")
-            #file.write
             print (readings)
-            #file.write(("%f,%f\n" % (time.time() - startLogTime,readings)).encode("utf-8"))
             file.write(readings)
             file.close
     else:
         filename = ""
 
 def setupChannel(CHANNEL):
-    print("CHCH:",CHANNEL)
     scope.run()
     scope.display_only_channel(CHANNEL)
 
@@ -896,16 +684,12 @@ def myQuantiphy(value,unit):
     if(unit == "%"):
         return (str(value * 100) + "%")
     return Quantity(value,unit)
-    
 
-def UpdateAll():        # Update Data, trace and screen
-    #DoFFT()             # Fast Fourier transformation
-    #MakeTrace()         # Update the traces
-    UpdateScreen()      # Update the screen
+#def UpdateAll():        # Update Data, trace and screen
+#    UpdateScreen()      # Update the screen
 
 
 def UpdateTrace():      # Update trace and screen
-#    MakeTrace()         # Update traces
     UpdateScreen()      # Update the screen
 
 
@@ -913,85 +697,6 @@ def UpdateScreen():     # Update screen with trace and text
     MakeScreen()        # Update the screen
     root.update()       # Activate updated screens
 
-def MakeTrace():        # Update the grid and trace
-    global SIGNAL1
-    global FFTresult
-    global T1line
-    global T2line
-    global S1line
-    global S2line
-    global STOREtrace
-    global X0L          # Left top X value
-    global Y0T          # Left top Y value
-    global GRW          # Screenwidth
-    global GRH          # Screenheight
-    global Vdiv         # Number of vertical divisions
-    global triggerLevel
-    global STOPfrequency
-    global CENTERsignalfreq
-    global STARTsignalfreq
-    global STOPsignalfreq
-    global SNenabled
-    global SNmeasurement
-    global SNresult
-    global SNwidth
-    global DBdivlist    # dB per division list
-    global DBdivindex   # Index value
-    global DBlevel      # Reference level
-    global SAMPLErate
-
-    # Set the TRACEsize variable
-    TRACEsize = len(SIGNAL1)      # Set the trace length
-
-    if TRACEsize == 0:              # If no trace, skip rest of this routine
-        return()
-
-
-    # Vertical conversion factors (level dBs) and border limits
-    Yconv = float(GRH) / (Vdiv * DBdivlist[DBdivindex])     # Conversion factors from dBs to screen points 10 is for 10 * log(power)
-    #Yc = float(Y0T) + GRH + Yconv * (DBlevel -90)           # Zero postion and -90 dB for in grid range
-    Yc = float(Y0T) + GRH + Yconv * (DBlevel -(Vdiv * DBdivlist[DBdivindex]))
-    Ymin = Y0T                                              # Minimum position of screen grid (top)
-    Ymax = Y0T + GRH                                        # Maximum position of screen grid (bottom)
-
-
-    # Horizontal conversion factors (frequency Hz) and border limits
-    Fpixel = float(STOPfrequency - triggerLevel) / GRW    # Frequency step per screen pixel
-    Fsample = float(SAMPLErate / 2) / (TRACEsize - 1)       # Frequency step per sample
-
-    T1line = []
-    n = 0
-    Slevel = 0.0            # Signal level
-    Nlevel = 0.0            # Noise level
-    while n < TRACEsize:
-        F = n * Fsample
-
-        if F >= triggerLevel and F <= STOPfrequency:
-            x = X0L + (F - triggerLevel)  / Fpixel
-            T1line.append(int(x + 0.5))
-            try:
-                y =  Yc - Yconv * 10 * math.log10(float(FFTresult[n]))  # Convert power to DBs, except for log(0) error
-            except:
-                y = Ymax
-
-            if (y < Ymin):
-                y = Ymin
-            if (y > Ymax):
-                y = Ymax
-            T1line.append(int(y + 0.5))
-
-            if SNenabled == True and (F < STARTsignalfreq or F > STOPsignalfreq):               # Add to noise if outside signal band
-                Nlevel = Nlevel + float(FFTresult[n])
-
-        if SNenabled == True and (F >= STARTsignalfreq and F <= STOPsignalfreq):                # Add to signal if inside signal band
-            Slevel = Slevel + float(FFTresult[n])
-
-        n = n + 1
-
-    try:
-        SNresult = 10 * math.log10(Slevel / Nlevel)
-    except:
-        SNresult = -999
 
 def MakeScreen():       # Update the screen with traces and text
     global VoltPerDiv
@@ -1039,9 +744,6 @@ def MakeScreen():       # Update the screen with traces and text
 
 
     # Delete all items on the screen
-    #de = ca.find_enclosed ( 0, 0, CANVASwidth+1000, CANVASheight+1000)
-    #for n in de:
-    #    ca.delete(n)
     ca.delete('all')
 
     # Draw horizontal grid lines
@@ -1059,7 +761,6 @@ def MakeScreen():       # Update the screen with traces and text
         idTXT = ca.create_text (x3, y-5, text=txt, anchor=W, fill=COLORtext)
         VoltsDiv =  VoltsDiv - VPD
         i = i + 1
-
 
     # Draw vertical grid lines
     i = 0
@@ -1105,17 +806,13 @@ def MakeScreen():       # Update the screen with traces and text
             xpos += 1
         ca.create_line(ss, fill=COLORtrace2)            # and avoid writing lines with 1 coordinate
 
-
     # General information on top of the grid
-
-
     txt = "             Sample rate: " + str(SAMPLErate/1000000) +" MHz"
     txt = txt + "    Free Space"
 
     x = X0L
     y = 12
     idTXT = ca.create_text (x, y, text=txt, anchor=W, fill=COLORtext)
-
 
     # Start and stop frequency and dB/div and trace mode
     #txt = str(triggerLevel/1000000) + " to " + str(STOPfrequency/1000000) + " MHz"
@@ -1186,7 +883,7 @@ def MakeScreen():       # Update the screen with traces and text
     cursorx = ((root.winfo_pointerx()-root.winfo_rootx()-X0L-4)*10 )*float(TimebasePerDiv)/GRWN
     cursory = ((root.winfo_pointery()-root.winfo_rooty()-Y0T-50)*float(VoltPerDiv)*(-8)/GRH)+VoltsDivOffset
     cursorx = ("{0:.4f}".format(cursorx))
-    txt = "Cursor " + str(cursorx)  + "s   " + str(cursory) + "V  "
+    txt = "Cursor " + str(Quantity(cursorx,"s"))   + "  " +  str(Quantity(cursory,"V")) 
 
     x = X0L+800
     y = 12
@@ -1242,7 +939,6 @@ bL.pack(side=LEFT, padx=5, pady=5)
 
 
 cbC = ttk.Combobox(frame1, values=COUPlist,  width=Buttonwidth1)
-#cbF.set(COUPlist[7])
 cbC.pack(side=LEFT, padx=5, pady=5)
 cbC.bind("<<ComboboxSelected>>", COUPset)
 
@@ -1275,12 +971,6 @@ b.pack(side=LEFT, padx=5, pady=5)
 b = Button(frame3, text="Stopfreq", width=Buttonwidth2, command=BStopfrequency)
 b.pack(side=LEFT, padx=5, pady=5)
 
-b = Button(frame3, text="+dB/div", width=Buttonwidth2, command=BDBdiv2)
-b.pack(side=RIGHT, padx=5, pady=5)
-
-b = Button(frame3, text="-dB/div", width=Buttonwidth2, command=BDBdiv1)
-b.pack(side=RIGHT, padx=5, pady=5)
-
 b = Button(frame3, text="s/div*2", width=Buttonwidth2, command=Blevel4)
 b.pack(side=RIGHT, padx=5, pady=5)
 
@@ -1297,3 +987,7 @@ b.pack(side=RIGHT, padx=5, pady=5)
 root.update()               # Activate updated screens
 #SELECTaudiodevice()
 Sweep()
+
+
+
+
