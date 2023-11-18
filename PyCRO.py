@@ -58,13 +58,10 @@ SWEEPsingle = False         # flag to sweep once
 SAMPLErate = 1000000        # scope sample rate, read from scope when we read the buffer
 SAMPLEsize = 16384          # default sample size
 SAMPLEdepth = 0             # 0 normal, 1 long
-UPDATEspeed = 1.1           # Update speed can be increased when problems if PC too slow, default 1.1
 YREFerence = 0
 XREFerence = 0
 YORigion = 0
 XORigion = 0
-ADCposFSD = 218             #ADC value from WAV when waveform is at the top of the graticle. i.e at a 2v reading when set to 0.5v/div 
-ADCnegFSD = 25              #ADC value from WAV when waveform is at the top of the graticle. i.e at a -2v reading when set to 0.5v/div
 
 
 filename = ""
@@ -88,15 +85,9 @@ MEASunitslist = ["V","V","V","V","V","V","V",
     "V2","V","P","P","E","E"]
 
 
-lenMEASlist = len(MEASlist)
-MEASlistIDX = 7
 COUPlist = ["DC","AC","GND"]
 CHANlist = ["CHANNEL 1","CHANNEL 2","CHANNEL 3","CHANNEL 4"]
 
-DBlevel = 0                 # Reference level
-
-LONGfftsize = 262144        # FFT to do on long buffer. larger FFT takes more time
-fftsamples = 16384           # size of FFT we are using - recalculated in DoFFT()
 
 # Colors that can be modified
 COLORframes = "#000080"     # Color = "#rrggbb" rr=red gg=green bb=blue, Hexadecimal values 00 - ff
@@ -128,8 +119,6 @@ TimebasePerDiv = "0"
 VoltPerDiv = "0"
 VoltsPeakPeak = "0"
 SweepNo = 0 
-good_read = 0
-bad_read = 0
 
 SNenabled= False            # If Signal to Noise is enabled in the software
 CENTERsignalfreq = 1000     # Center signal frequency of signal bandwidth for S/N measurement
@@ -463,8 +452,6 @@ def Sweep():   # Read samples and store the data into the arrays
     global COLORyellow
     global COLORgreen
     global COLORmagenta
-    global good_read
-    global bad_read
     global scope
     global measFreq
     global measVMAX
@@ -477,9 +464,6 @@ def Sweep():   # Read samples and store the data into the arrays
 
         # RUNstatus = 1 : Open Stream
         if (RUNstatus == 1):
-            if UPDATEspeed < 1:
-                UPDATEspeed = 1.0
-
             TRACESopened = 1
 
             try:
@@ -721,7 +705,6 @@ def MakeScreen():       # Update the screen with traces and text
     global Vdiv         # Number of vertical divisions
     global RUNstatus    # 0 stopped, 1 start, 2 running, 3 stop now, 4 stop and restart
     global SAMPLEdepth  # 0 norm, 1 long
-    global UPDATEspeed
     global triggerLevel
     global STOPfrequency
     global CENTERsignalfreq
@@ -742,7 +725,7 @@ def MakeScreen():       # Update the screen with traces and text
     global CANVASheight
 
 
-
+    SweepNo += 1
     # Delete all items on the screen
     ca.delete('all')
 
@@ -875,7 +858,6 @@ def MakeScreen():       # Update the screen with traces and text
 # note the magic numbers below were determined by looking at the cursor values
 # not sure why they don't correspond to X0T and Y0T
     #cursorx = (triggerLevel + (root.winfo_pointerx()-root.winfo_rootx()-X0L-4) * (STOPfrequency-triggerLevel)/GRW) /1000000
-    #cursory = DBlevel - (root.winfo_pointery()-root.winfo_rooty()-Y0T-50) * Vdiv*DBdivlist[DBdivindex] /GRH
     VPD = float(VoltPerDiv)
     VoltsDivOffset = VPD * 4
     #VoltsDiv =  VoltsDiv - VPD
