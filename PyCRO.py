@@ -24,7 +24,10 @@ from time import sleep
 from tkinter import *
 from quantiphy import Quantity
 from tkinter import ttk
+from tkinter import messagebox
 
+import tkinter.filedialog as simpledialog
+import tkinter.simpledialog as simpledialog
 #from tkFileDialog import askopenfilename
 #from tkSimpleDialog import askstring
 #from tkMessageBox import *
@@ -84,6 +87,16 @@ MEASunitslist = ["V","V","V","V","V","V","V",
     "S","V/S","V/S","V","V","V",
     "V2","V","P","P","E","E"]
 
+MEASlistLog = ["V","V","V","V","V","V","V",
+    "V","V","V","V/S","V/S","S",
+    "Hz","S","S","S","S","%",
+    "%","S",
+    "S","V/S","V/S","V","V","V",
+    "V2","V","P","P","E","E"]
+
+var1 = ""
+var2 = ""
+
 lenMEASlist = len(MEASlist)
 MEASlistIDX = 7
 COUPlist = ["DC","AC","GND"]
@@ -109,6 +122,7 @@ COLORred = "#ff0000"
 COLORyellow = "#ffff00"
 COLORgreen = "#00ff00"
 COLORmagenta = "#00ffff"
+COLORlightgrey = "#D3D3D3"
 
 # Button sizes that can be modified
 Buttonwidth1 = 12
@@ -117,7 +131,7 @@ Buttonwidth2 = 8
 
 # Initialisation of general variables
 CHANNEL = 2
-STARTfrequency = 0.0        # Startfrequency
+triggerLevel = 0.0        # triggerLevel
 STOPfrequency = 10000000.0     # Stopfrequency
 TimebasePerDiv = "0" 
 VoltPerDiv = "0"
@@ -128,7 +142,7 @@ bad_read = 0
 
 SNenabled= False            # If Signal to Noise is enabled in the software
 CENTERsignalfreq = 1000     # Center signal frequency of signal bandwidth for S/N measurement
-STARTsignalfreq = 950.0     # Startfrequency of signal bandwidth for S/N measurement
+STARTsignalfreq = 950.0     # triggerLevel of signal bandwidth for S/N measurement
 STOPsignalfreq = 1050.0     # Stopfrequency of signal bandwidth for S/N measurement
 SNfreqstep = 100            # Frequency step S/N frequency
 SNmeasurement = True       # True for signal to noise measurement between signal and displayed bandwidth
@@ -155,7 +169,6 @@ S2line = []                 # line for stop of signal band indication
 
 RUNstatus = 1               # 0 stopped, 1 start, 2 running, 3 stop now, 4 stop and restart
 STOREtrace = False          # Store and display trace
-FFTwindow = 4               # FFTwindow 0=None (rectangular B=1), 1=Cosine (B=1.24), 2=Triangular non-zero endpoints (B=1.33),
                             # 3=Hann (B=1.5), 4=Blackman (B=1.73), 5=Nuttall (B=2.02), 6=Flat top (B=3.77)
 SIGNALlevel = 0.0            # Level of audio input 0 to 1
 
@@ -182,6 +195,7 @@ def on_click(self, event):
         # Current point in relative coordinates
         self.curr_var.set('%s:%s' % (event.x - self.last_point[0], event.y - self.last_point[1]))
         self.last_point = event.x, event.y
+        print ("here")
 
 # handle markers when mouse is clicked in middle frame
 def Bmarker1(event):
@@ -229,17 +243,57 @@ def CHANNELset(event):
    
     
     UpdateScreen()          # Always Update
+
+def BParamList():
+    global var1
+    global var2
+    global MEASlistLog
+    global MEASlistChk
+    #s = simpledialog.askstring("Trig","Enter New Level \n\n as a float eg 0.380 \n    or \n with units eg 380mV\n" ,initialvalue=prettyTrig)
+    noOfCols = 5
+    chkBoxWidth = 10
+    chkBoxHeight = 1
+    print((noOfCols * chkBoxWidth) + (noOfCols * 5))
+    frame4 = LabelFrame(root, bg = COLORyellow, background=COLORlightgrey, borderwidth=10, relief=RIDGE, text="Parameter Selector",font=(60))
+    frame4.place(x = 250, y = 20, width = (noOfCols * chkBoxWidth)*8 + (noOfCols * 4)*8  , height = 310)
+    #root.title("sdfsd")
+    #frame4.pack(side=TOP, expand=1, fill=X)
+    for checkers in range(len(MEASlistChk)):
+        #print (int(i / 5),(i % 5))
+        cRow = int(checkers / 5) + 1
+        cCol =  (checkers % 5) + 0
+        #MEASlistLog[i] = IntVar()
+        Checkbutton(frame4, text=MEASlist[checkers], variable=MEASlistChk[checkers],width = chkBoxWidth, height = chkBoxHeight).grid(row = cRow, column = cCol, padx=5, pady=5)
+        #Checkbutton(frame4, text=MEASlist[i], variable=MEASlistLog[i],width = 10).pack(side=LEFT, padx=5, pady=5)
+    #var1 = IntVar()
+    #Checkbutton(frame4, text="male", variable=var1).grid(row=0, sticky=W)
+    #var2 = IntVar()
+    #Checkbutton(frame4, text="female", variable=var2).grid(row=i+1, sticky=W)
     
+    #Button(frame4, text="V/div-", width=Buttonwidth2, command=frame4.destroy).grid(row=2, sticky=W)
+    #Button(frame4, text="Accept", width=Buttonwidth2, command=xxx).grid(row=i+2,  columnspan = 5, padx=5, pady=5)
+    Button(frame4, text="Close", width=chkBoxWidth, height = chkBoxHeight,command=frame4.destroy).grid(row = cRow + 2 , column = 1,  padx=5, pady=5)
+    Button(frame4, text="Select All", width=chkBoxWidth, height = chkBoxHeight,command=selAllParams).grid(row=cRow + 2,column = 2, padx=5, pady=5)
+    Button(frame4, text="De-Select All", width=chkBoxWidth, height = chkBoxHeight,command=deSelAllParams).grid(row= cRow + 2, column = 3, padx=5, pady=5)
+    #Button(frame4, text="xxx", width=chkBoxWidth, height = chkBoxHeight,command=lambda: xxx(1)).grid(row= = cRow + 2, column = 4,  padx=5, pady=5)
+    #Button(frame4, text="Close", width=Buttonwidth2, command=frame4.destroy()).grid(row=i+2,  columnspan = 5, padx=5, pady=50)
 
-def BFFTwindow():
-    global FFTwindow
-    global TRACEreset
-
-    FFTwindow = FFTwindow + 1
-    if FFTwindow > 6:
-        FFTwindow = 0
-    TRACEreset = True    # Reset trace peak and trace average
+    #frame4.destroy()
+    #mainloop()
+    print (var1)
     UpdateAll()          # Always Update
+    
+def xxx(varv):
+    print (varv)
+    
+def selAllParams():
+    for checkers in range(len(MEASlistChk)):
+        MEASlistChk[checkers].set(1)
+
+def deSelAllParams():
+    for checkers in range(len(MEASlistChk)):
+        MEASlistChk[checkers].set(0)
+
     
 def COUPset(event):
      scope.write(":CHAN" + str(CHANNEL) + ":COUP " + COUPlist[cbC.current()]) 
@@ -468,37 +522,61 @@ def BReset():
    sleep(10)
 
 
-def BStartfrequency():
-    global STARTfrequency
-    global STOPfrequency
+def BTriggerLevel():
+    global triggerLevel
     global RUNstatus
-
+    global CHANNEL
+    #scope.write(":TRIGger:EDGe:SOURce CHANnel" + str(CHANNEL))
     # if (RUNstatus != 0):
     #    showwarning("WARNING","Stop sweep first")
     #    return()
-
-    s = askstring("Startfrequency: ","Value: " + str(STARTfrequency) + " Hz\n\nNew value:\n")
-
+    #        scope.write(":TRIGger:EDGe:LEVel "+"3.800000e-01")
+    #        print(scope.query(":TRIGger:EDGe:LEVel?"))
+    #        print(Quantity(scope.query(":TRIGger:EDGe:LEVel?"),"V"))
+    #        gets = Quantity(scope.query(":TRIGger:EDGe:LEVel?"),"V")
+    #        print(Quantity("80mV"))
+    triggerLevel = scope.query(":TRIGger:EDGe:LEVel?")
+    prettyTrig = str(Quantity(triggerLevel,"V"))
+    s = simpledialog.askstring("Trig","Enter New Level \n\n as a float eg 0.380 \n    or \n with units eg 380mV\n" ,initialvalue=prettyTrig)
+    #print(s)
     if (s == None):         # If Cancel pressed, then None
         return()
 
     try:                    # Error if for example no numeric characters or OK pressed without input (s = "")
-        v = float(s)
+    
+        triggerV = Quantity(s)
+        triggerVvalue = triggerV.as_tuple()[0]
+        
     except:
-        s = "error"
+        triggerVvalue = "error"
+        print("Invalid Entry:" + s)
 
-    if s != "error":
-        STARTfrequency = abs(v)
+    if triggerVvalue != "error":
+        triggerLevel = triggerVvalue
+        vScale = float(scope.query(":CHANnel" + str(CHANNEL) + ":SCALe?"))
+        vOffset = float(scope.query(":CHANnel" + str(CHANNEL) + ":OFFSet?"))
+        print (type(vScale))
+        print (type(vOffset))
+        print (type(triggerLevel))
+        #a < x < b or b < x < a
+        #a = ((-5 * vScale) - vOffset)
+        #b = ((-5 * vScale) - vOffset
+        if(  is_between(  ((-5 * vScale) - vOffset),     triggerLevel,      ((5 * vScale) - vOffset)    )  ):
+        #if(triggerLevel in range((-5 * vScale) - vOffset,(5 * vScale) - vOffset)): 
+            scope.write(":TRIGger:EDGe:LEVel "+str(triggerLevel))
+        else:
+            print ("Outside Valid ranger of " + str((-5 * vScale) - vOffset) + " to " + str((5 * vScale) - vOffset))
 
-    if STOPfrequency <= STARTfrequency:
-        STOPfrequency = STARTfrequency + 1
+    print (triggerLevel)
+    
 
-    if RUNstatus == 0:      # Update if stopped
-        UpdateTrace()
-
+    UpdateTrace()
+    
+def is_between(a, x, b):
+    return min(a, b) < x < max(a, b)
 
 def BStopfrequency():
-    global STARTfrequency
+    global triggerLevel
     global STOPfrequency
     global RUNstatus
 
@@ -506,7 +584,7 @@ def BStopfrequency():
     #    showwarning("WARNING","Stop sweep first")
     #    return()
 
-    s = askstring("Stopfrequency: ","Value: " + str(STOPfrequency) + " Hz\n\nNew value:\n")
+    s = simpledialog.askstring("Stopfrequency: ","Value: " + str(STOPfrequency) + " Hz\n\nNew value:\n")
 
     if (s == None):         # If Cancel pressed, then None
         return()
@@ -522,8 +600,8 @@ def BStopfrequency():
     if STOPfrequency < 10:  # Minimum stopfrequency 10 Hz
         STOPfrequency = 10
 
-    if STARTfrequency >= STOPfrequency:
-        STARTfrequency = STOPfrequency - 1
+    if triggerLevel >= STOPfrequency:
+        triggerLevel = STOPfrequency - 1
 
     if RUNstatus == 0:      # Update if stopped
         UpdateTrace()
@@ -576,7 +654,7 @@ def Sweep():   # Read samples and store the data into the arrays
     global SAMPLEsize
     global SAMPLEdepth
     global UPDATEspeed
-    global STARTfrequency
+    global triggerLevel
     global STOPfrequency
     global COLORred
     global COLORcanvas
@@ -654,19 +732,17 @@ def Sweep():   # Read samples and store the data into the arrays
         measVBAS = scope.get_channel_measurement(CHANNEL, "VBAS", type='CURRent')
         
         measF = scope.get_channel_measurement(CHANNEL, MEASlist[cbF.current()], type='CURRent')
-        print("Featured:",measF)
-        measF = str(myQuantiphy(measF,MEASunitslist[cbF.current()]))
-        lF.config(text=measF )
         
-        #str(myQuantiphy(measFreq,'Hz'))
+        measF = str(myQuantiphy(measF,MEASunitslist[cbF.current()]))
+        MEASlist[cbF.current()]
+        #print("Featured:"+MEASlist[cbF.current()]+":"+measF)
+        lF.config(text=measF )
         
         cbC.set(scope.query(":CHAN"+str(CHANNEL) + ":COUP?"))
         
         logData()
 
         UpdateScreen()                                  # UpdateScreen() call
-
-
 
         # RUNstatus = 2: Reading audio data from soundcard
         if (RUNstatus == 2):
@@ -679,33 +755,23 @@ def Sweep():   # Read samples and store the data into the arrays
             root.update()       # update screen
 
             data_size = 0
-            #scope.stop()
-            #scope.set_waveform_mode(mode='RAW')
-            #signals = scope.query_raw("WAV:DATA?")
-            #signals = signals[11:]
             signals = scope.get_waveform_samples(CHANNEL, mode='RAW')
-            #signals = scope.get_waveform_bytes(CHANNEL, mode='RAW')
-            #print (signals)
             data_size = len(signals)
             scope.run()
             
             SAMPLErate = scope.query("ACQ:SRAT?") #scope.ask_for_values(':ACQ:SRAT?')[0] #do this second
             
             SAMPLErate = float(SAMPLErate)#.strip('\n')
-            print ( 'Data size:', data_size,'Sample size:', SAMPLEsize, "Sample rate:", SAMPLErate )
+            #print ( 'Data size:', data_size,'Sample size:', SAMPLEsize, "Sample rate:", SAMPLErate )
 
             n = 0
             SIGNAL1 = []
-            #df = ""
-            #print("SIGNALS:",signals[n])
             while n < len(signals):#12000 :
-              #print (n)
               SIGNAL1.append (translate((signals[n]), 4 * VoltPerDiv, -4 * VoltPerDiv, Y0T, Y0T+GRH))
-
-              #df += str(ord(signals[n])) + " " 
               n += 1
-            print("**********Signal 30:",signals[30])
+
             UpdateAll()  
+
             if SWEEPsingle == True:  # single sweep mode, sweep once then stop
                 SWEEPsingle = False
                 RUNstatus = 3
@@ -741,7 +807,7 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     # Convert the 0-1 range into a value in the right range.
     return rightMin + (valueScaled * rightSpan)
 
-def logData():#,readings,graphnum):
+def logData():
     global filename
     global startLogTime
     global nextLogTime
@@ -762,7 +828,22 @@ def logData():#,readings,graphnum):
             timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
             #filename = path_to_log + self.inst.identify()["model"] + "_" +  self.inst.identify()["serial"] + "_" + timestamp
             filename = path_to_log  + timestamp
-            header = b"Timestamp," + MEASlist[cbF.current()].encode("utf-8") + "\n".encode("utf-8")
+
+            NoOfParamsToLog = 0
+            header = b"Timestamp" #+ MEASlist[cbF.current()].encode("utf-8") + "\n".encode("utf-8")
+            
+            for checkers in range(len(MEASlistChk)):
+                if(MEASlistChk[checkers].get()):
+                    header += ",".encode("utf-8") + MEASlist[checkers].encode("utf-8")
+                    NoOfParamsToLog += 1
+            header += "\n".encode("utf-8")
+            if (NoOfParamsToLog == 0):
+                messagebox.showinfo("No Params have been selected", "Use 'Sel Log Params' to select some values to Log")
+                bL["text"] = "LOG OFF"
+                return()
+            #Checkbutton(frame4, text=MEASlist[checkers], variable=MEASlistChk[checkers],width = chkBoxWidth, height = chkBoxHeight).grid(row = cRow, column = cCol, padx=5, pady=5)
+
+            
 
             file = open(filename +  "." + file_format, "ab")
             file.write(header) 
@@ -770,9 +851,19 @@ def logData():#,readings,graphnum):
         
         if (time.time() > nextLogTime ):
             nextLogTime += 10
-            readings = scope.get_channel_measurement(CHANNEL, MEASlist[cbF.current()], type='CURRent')
+            readings = b""
+            readings += str(time.time() - startLogTime).encode("utf-8")
+            for checkers in range(len(MEASlistChk)):
+                if(MEASlistChk[checkers].get()):
+                    reading = scope.get_channel_measurement(CHANNEL, MEASlist[checkers], type='CURRent')
+                    
+                    readings += ",".encode("utf-8") + str(reading).encode("utf-8")
+            readings += "\n".encode("utf-8")
             file = open(filename +  "." + file_format, "ab")
-            file.write(("%f,%f\n" % (time.time() - startLogTime,readings)).encode("utf-8"))
+            #file.write
+            print (readings)
+            #file.write(("%f,%f\n" % (time.time() - startLogTime,readings)).encode("utf-8"))
+            file.write(readings)
             file.close
     else:
         filename = ""
@@ -835,7 +926,7 @@ def MakeTrace():        # Update the grid and trace
     global GRW          # Screenwidth
     global GRH          # Screenheight
     global Vdiv         # Number of vertical divisions
-    global STARTfrequency
+    global triggerLevel
     global STOPfrequency
     global CENTERsignalfreq
     global STARTsignalfreq
@@ -865,7 +956,7 @@ def MakeTrace():        # Update the grid and trace
 
 
     # Horizontal conversion factors (frequency Hz) and border limits
-    Fpixel = float(STOPfrequency - STARTfrequency) / GRW    # Frequency step per screen pixel
+    Fpixel = float(STOPfrequency - triggerLevel) / GRW    # Frequency step per screen pixel
     Fsample = float(SAMPLErate / 2) / (TRACEsize - 1)       # Frequency step per sample
 
     T1line = []
@@ -875,8 +966,8 @@ def MakeTrace():        # Update the grid and trace
     while n < TRACEsize:
         F = n * Fsample
 
-        if F >= STARTfrequency and F <= STOPfrequency:
-            x = X0L + (F - STARTfrequency)  / Fpixel
+        if F >= triggerLevel and F <= STOPfrequency:
+            x = X0L + (F - triggerLevel)  / Fpixel
             T1line.append(int(x + 0.5))
             try:
                 y =  Yc - Yconv * 10 * math.log10(float(FFTresult[n]))  # Convert power to DBs, except for log(0) error
@@ -926,22 +1017,14 @@ def MakeScreen():       # Update the screen with traces and text
     global RUNstatus    # 0 stopped, 1 start, 2 running, 3 stop now, 4 stop and restart
     global SAMPLEdepth  # 0 norm, 1 long
     global UPDATEspeed
-    global STARTfrequency
+    global triggerLevel
     global STOPfrequency
     global CENTERsignalfreq
     global STARTsignalfreq
     global STOPsignalfreq
-    global SNenabled
-    global SNmeasurement
-    global SNresult
-    global DBdivlist    # dB per division list
-    global DBdivindex   # Index value
-    global DBlevel      # Reference level
     global SAMPLErate
     global SAMPLEsize
     global SIGNALlevel   # Level of signal input 0 to 1
-    global FFTwindow
-    global fftsamples   # size of FFT
     global COLORgrid    # The colors
     global COLORtrace1
     global COLORtrace2
@@ -966,7 +1049,6 @@ def MakeScreen():       # Update the screen with traces and text
     x1 = X0L
     x2 = X0L + GRW
     x3 = x1+2     # db labels X location
-    db= DBlevel
     VPD = float(VoltPerDiv)
     VoltsDiv = VPD * 4
     while (i <= Vdiv):
@@ -975,7 +1057,6 @@ def MakeScreen():       # Update the screen with traces and text
         ca.create_line(Dline, fill=COLORgrid)
         txt = str("{0:.2f}".format(VoltsDiv))+"V"#VoltPerDiv#) #str(db) # db labels
         idTXT = ca.create_text (x3, y-5, text=txt, anchor=W, fill=COLORtext)
-        db = db - DBdivlist[DBdivindex]
         VoltsDiv =  VoltsDiv - VPD
         i = i + 1
 
@@ -984,8 +1065,6 @@ def MakeScreen():       # Update the screen with traces and text
     i = 0
     y1 = Y0T
     y2 = Y0T + GRH
-    freq= STARTfrequency
-    freqstep= (STOPfrequency-STARTfrequency)/10
     SPD = float(TimebasePerDiv)
     TimeDiv = 0
     while (i < 11):
@@ -994,7 +1073,6 @@ def MakeScreen():       # Update the screen with traces and text
         ca.create_line(Dline, fill=COLORgrid)
         txt = str(myQuantiphy(TimeDiv,'S'))#str("{0:.6f}".format(TimeDiv))#SecPerDiv#str(freq/1000000) # freq labels in mhz
         idTXT = ca.create_text (x-10, y2+10, text=txt, anchor=W, fill=COLORtext)
-        freq=freq+freqstep
         TimeDiv = TimeDiv + SPD
         i = i + 1
         
@@ -1025,12 +1103,6 @@ def MakeScreen():       # Update the screen with traces and text
           #xpos += 1
           if (n % 12) == 0:
             xpos += 1
-        """  
-        while n < 1024:
-          ss.append(n+18)
-          ss.append(T2line[n]*2)
-          n = n + 1
-        """
         ca.create_line(ss, fill=COLORtrace2)            # and avoid writing lines with 1 coordinate
 
 
@@ -1038,24 +1110,7 @@ def MakeScreen():       # Update the screen with traces and text
 
 
     txt = "             Sample rate: " + str(SAMPLErate/1000000) +" MHz"
-    #txt = txt + "    FFT samples: " + str(SMPfftlist[SMPfftindex])
-    txt = txt + "    FFT size: " + str(fftsamples)
-    txt = txt + "    RBW: " + str(int((SAMPLErate/SAMPLEsize)/2))+" Hz"
-
-    if FFTwindow == 0:
-        txt = txt + "    Rectangular (no) window (B=1) "
-    if FFTwindow == 1:
-        txt = txt + "    Cosine window (B=1.24) "
-    if FFTwindow == 2:
-        txt = txt + "    Triangular window (B=1.33) "
-    if FFTwindow == 3:
-        txt = txt + "    Hann window (B=1.5) "
-    if FFTwindow == 4:
-        txt = txt + "    Blackman window (B=1.73) "
-    if FFTwindow == 5:
-        txt = txt + "    Nuttall window (B=2.02) "
-    if FFTwindow == 6:
-        txt = txt + "    Flat top window (B=3.77) "
+    txt = txt + "    Free Space"
 
     x = X0L
     y = 12
@@ -1063,18 +1118,11 @@ def MakeScreen():       # Update the screen with traces and text
 
 
     # Start and stop frequency and dB/div and trace mode
-    #txt = str(STARTfrequency/1000000) + " to " + str(STOPfrequency/1000000) + " MHz"
+    #txt = str(triggerLevel/1000000) + " to " + str(STOPfrequency/1000000) + " MHz"
     txt = "Sweep No: " + str(SweepNo)
     txt = txt +  "    " + str(VoltPerDiv) + " V/div"
     txt = txt + "    Vpp: " + str(myQuantiphy(VoltsPeakPeak,'V')) 
     txt = txt + "     " + str(myQuantiphy(TimebasePerDiv,'S')) + "/div "
-    
-    if SNenabled == True and SNmeasurement == True:
-        txt1 = str(int(SNresult * 10))
-        while len(txt) < 2:
-            txt1 = "0" + txt1
-        txt1 = txt1[:-1] + "." + txt1[-1:]
-        txt = txt + "    Signal to Noise ratio (dB): " + txt1
 
     x = X0L +500
     y = Y0T+GRH+32
@@ -1094,6 +1142,7 @@ def MakeScreen():       # Update the screen with traces and text
     txt1 = "||||||||||||||||||||"   # Bargraph
     le = len(txt1)                  # length of bargraph
 
+    SIGNALlevel = 5
     t = int(math.sqrt(SIGNALlevel) * le)
 
     n = 0
@@ -1114,17 +1163,12 @@ def MakeScreen():       # Update the screen with traces and text
 
 
     # Runstatus and level information
-    if (SAMPLEdepth == 1):
-        txt = "LONG"
-    else:
-        txt = "NORM"
+    txt = "Run Status:" + str(RUNstatus)
 
     if (RUNstatus == 0) or (RUNstatus == 3):
         txt = txt + " Sweep stopped"
     else:
         txt = txt + " Sweep running"
-
-
 
     x = X0L + 100
     y = Y0T+GRH+32
@@ -1133,7 +1177,7 @@ def MakeScreen():       # Update the screen with traces and text
 # show the values at the mouse cursor
 # note the magic numbers below were determined by looking at the cursor values
 # not sure why they don't correspond to X0T and Y0T
-    #cursorx = (STARTfrequency + (root.winfo_pointerx()-root.winfo_rootx()-X0L-4) * (STOPfrequency-STARTfrequency)/GRW) /1000000
+    #cursorx = (triggerLevel + (root.winfo_pointerx()-root.winfo_rootx()-X0L-4) * (STOPfrequency-triggerLevel)/GRW) /1000000
     #cursory = DBlevel - (root.winfo_pointery()-root.winfo_rooty()-Y0T-50) * Vdiv*DBdivlist[DBdivindex] /GRH
     VPD = float(VoltPerDiv)
     VoltsDivOffset = VPD * 4
@@ -1147,43 +1191,15 @@ def MakeScreen():       # Update the screen with traces and text
     x = X0L+800
     y = 12
     idTXT = ca.create_text (x, y, text=txt, anchor=W, fill=COLORtext)
-"""
-    Marker1valid=False
-    if ((Marker1x > 20) & (Marker1y >20)): # show on screen markers
-        Marker1valid=True
-        idTXT = ca.create_text (Marker1x-3, Marker1y+4, text="^", anchor=W, fill=COLORMarker1)
-        Marker1freq = (STARTfrequency + (Marker1x-19) * (STOPfrequency-STARTfrequency)/GRW) /1000000
-        Marker1db = DBlevel - (Marker1y-20) * Vdiv*DBdivlist[DBdivindex] /GRH
-        txt = "Marker1 " + str(Marker1freq)  + " MHz   " + str(Marker1db) + " dB"
-        x = X0L + 300
-        y = Y0T -10
-        idTXT = ca.create_text (x, y, text=txt, anchor=W, fill=COLORMarker1)
-
-    Marker2valid=False
-    if ((Marker2x > 20) & (Marker2y >20)): # show on screen markers
-        Marker2valid=True
-        idTXT = ca.create_text (Marker2x-3, Marker2y+4, text="^", anchor=W, fill=COLORMarker2)
-        Marker2freq = (STARTfrequency + (Marker2x-19) * (STOPfrequency-STARTfrequency)/GRW) /1000000
-        Marker2db = DBlevel - (Marker2y-20) * Vdiv*DBdivlist[DBdivindex] /GRH
-        txt = "Marker2 " + str(Marker2freq)  + " MHz   " + str(Marker2db) + " dB"
-        x = X0L + 520
-        y = Y0T -10
-        idTXT = ca.create_text (x, y, text=txt, anchor=W, fill=COLORMarker2)
-
-    # show marker delta only if both are valid
-    if (Marker1valid & Marker2valid):
-        Deltafreq = abs(Marker2freq-Marker1freq)
-        Deltadb = abs(Marker2db-Marker1db)
-        txt = "Delta " + str(Deltafreq)  + " MHz   " + str(Deltadb) + " dB"
-        x = X0L + 750
-        y = Y0T -10
-        idTXT = ca.create_text (x, y, text=txt, anchor=W, fill=COLORtext)
-
-"""
 
 # ================ Make Screen ==========================
 
 root=Tk()
+
+MEASlistChk = []
+for i in range(len (MEASlist)):
+    MEASlistChk.append(IntVar())
+
 root.title("Rigol Trace Viewer Nov 2023 JPR")
 
 root.minsize(100, 100)
@@ -1218,8 +1234,12 @@ cbCh.bind("<<ComboboxSelected>>", CHANNELset)
 b = Button(frame1, text="RESET Scope", width=Buttonwidth1, command=BReset)
 b.pack(side=LEFT, padx=5, pady=5)
 
-b = Button(frame1, text="FFTwindow", width=Buttonwidth1, command=BFFTwindow)
+b = Button(frame1, text="Sel Log Params", width=Buttonwidth1, command=BParamList)
 b.pack(side=LEFT, padx=5, pady=5)
+
+bL = Button(frame1, text="LOG OFF", width=Buttonwidth1, command=BLogFData)
+bL.pack(side=LEFT, padx=5, pady=5)
+
 
 cbC = ttk.Combobox(frame1, values=COUPlist,  width=Buttonwidth1)
 #cbF.set(COUPlist[7])
@@ -1233,28 +1253,9 @@ cbF.pack(side=LEFT, padx=5, pady=5)
 lF = Label(frame1, text="0", width=Buttonwidth1,)
 lF.pack(side=LEFT, padx=5, pady=5)
 
-bL = Button(frame1, text="LOG OFF", width=Buttonwidth1, command=BLogFData)
-bL.pack(side=LEFT, padx=5, pady=5)
 
 b = Button(frame1, text="Store trace", width=Buttonwidth1, command=BSTOREtrace)
 b.pack(side=RIGHT, padx=5, pady=5)
-
-
-if SNenabled == True:
-    b = Button(frame2a, text="S/N mode", width=Buttonwidth1, command=BSNmode)
-    b.pack(side=LEFT, padx=5, pady=5)
-
-    b = Button(frame2a, text="S/N freq-", width=Buttonwidth1, command=BSNfreq1)
-    b.pack(side=LEFT, padx=5, pady=5)
-
-    b = Button(frame2a, text="S/N freq+", width=Buttonwidth1, command=BSNfreq2)
-    b.pack(side=LEFT, padx=5, pady=5)
-
-    b = Button(frame2a, text="Fstep-", width=Buttonwidth1, command=BSNfstep1)
-    b.pack(side=LEFT, padx=5, pady=5)
-
-    b = Button(frame2a, text="Fstep+", width=Buttonwidth1, command=BSNfstep2)
-    b.pack(side=LEFT, padx=5, pady=5)
 
 b = Button(frame3, text="Start", width=Buttonwidth2, command=BStart)
 b.pack(side=LEFT, padx=5, pady=5)
@@ -1268,7 +1269,7 @@ b.pack(side=LEFT, padx=5, pady=5)
 b = Button(frame3, text="Single", width=Buttonwidth1, command=BSINGLEsweep)
 b.pack(side=LEFT, padx=5, pady=5)
 
-b = Button(frame3, text="Startfreq", width=Buttonwidth2, command=BStartfrequency)
+b = Button(frame3, text="Trigger", width=Buttonwidth2, command=BTriggerLevel)
 b.pack(side=LEFT, padx=5, pady=5)
 
 b = Button(frame3, text="Stopfreq", width=Buttonwidth2, command=BStopfrequency)
@@ -1296,7 +1297,3 @@ b.pack(side=RIGHT, padx=5, pady=5)
 root.update()               # Activate updated screens
 #SELECTaudiodevice()
 Sweep()
-
-
-
-
