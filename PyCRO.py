@@ -71,14 +71,16 @@ ParameterList = ["VMAX","VMIN","VPP","VTOP","VBASe","VAMP","VAVG",
     "FREQuency","RTIMe","FTIMe","PWIDth","NWIDth","PDUTy",
     "NDUTy","TVMAX",
     "TVMIN","PSLEWrate","NSLEWrate","VUPper","VMID","VLOWer",
-    "VARIance","PVRMS","PPULses","NPULses","PEDGes","NEDGes"]
+    "VARIance","PVRMS","PPULses","NPULses","PEDGes","NEDGes",
+    "RPM"]
 
 ParameterUnitsList = ["V","V","V","V","V","V","V",
     "V","V","V","V/S","V/S","S",
     "Hz","S","S","S","S","%",
     "%","S",
     "S","V/S","V/S","V","V","V",
-    "V2","V","P","P","E","E"]
+    "V2","V","P","P","E","E",
+    "rpm"]
 
 
 ChannelCouplinglist = ["DC","AC","GND"]
@@ -213,6 +215,14 @@ def CHANNELset(event):
     
     UpdateScreen()          # Always Update
 
+def my_get_channel_measurement(ch,param,type="CURRent"):
+    if(param == "RPM"):
+        reading = scope.get_channel_measurement(CHANNEL, "FREQuency", type='CURRent')
+        reading = reading * 60
+    else:
+        reading = scope.get_channel_measurement(CHANNEL, param, type='CURRent')
+    return(reading)
+    
 def BParamList():
     global ParameterListChk
 
@@ -461,19 +471,19 @@ def Sweep():   # Read samples and store the data into the arrays
 
         TimebasePerDiv = scope.timebase_scale
         
-        VoltsPeakPeak = scope.get_channel_measurement(CHANNEL, "VPP", type='CURRent')
+        VoltsPeakPeak = my_get_channel_measurement(CHANNEL, "VPP", type='CURRent')
         
-        measFreq = scope.get_channel_measurement(CHANNEL, "FREQ", type='CURRent')
+        measFreq = my_get_channel_measurement(CHANNEL, "FREQ", type='CURRent')
 
-        measVMAX = scope.get_channel_measurement(CHANNEL, "VMAX", type='CURRent')
+        measVMAX = my_get_channel_measurement(CHANNEL, "VMAX", type='CURRent')
 
-        measVMIN = scope.get_channel_measurement(CHANNEL, "VMIN", type='CURRent')
+        measVMIN = my_get_channel_measurement(CHANNEL, "VMIN", type='CURRent')
 
-        measVTOP = scope.get_channel_measurement(CHANNEL, "VTOP", type='CURRent')
+        measVTOP = my_get_channel_measurement(CHANNEL, "VTOP", type='CURRent')
 
-        measVBAS = scope.get_channel_measurement(CHANNEL, "VBAS", type='CURRent')
+        measVBAS = my_get_channel_measurement(CHANNEL, "VBAS", type='CURRent')
         
-        measF = scope.get_channel_measurement(CHANNEL, ParameterList[cbF.current()], type='CURRent')
+        measF = my_get_channel_measurement(CHANNEL, ParameterList[cbF.current()], type='CURRent')
         
         measF = str(myQuantiphy(measF,ParameterUnitsList[cbF.current()]))
         ParameterList[cbF.current()]
@@ -591,7 +601,7 @@ def logData():
             readings += str(time.time() - startLogTime).encode("utf-8")
             for checkers in range(len(ParameterListChk)):
                 if(ParameterListChk[checkers].get()):
-                    reading = scope.get_channel_measurement(CHANNEL, ParameterList[checkers], type='CURRent')
+                    reading = my_get_channel_measurement(CHANNEL, ParameterList[checkers], type='CURRent')
                     
                     readings += ",".encode("utf-8") + str(reading).encode("utf-8")
             readings += "\n".encode("utf-8")

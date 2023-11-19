@@ -1,6 +1,10 @@
 # PyCRO
 Rigol ds1054z traceviewer. Python3 W10 using the ds1054z py package based on https://github.com/rheslip/PyDSA using TCP/IP
 
+Inspiration: I wanted to view RPM of various machines in the workshop.  Instead of buying RPM meter I used line following sensor 
+    connected to scope via long flying lead and black and white tape on the spinning part to detect rotation.
+    Initial tests worked but I could not see the frequency and I had to continually convert to RPM.
+
 Features :
 1. Screenshot save
 2. Autoscale
@@ -10,7 +14,7 @@ Features :
 6. Adjust Timebase
 7. Adjust Vertical scale
 8. Select Coupling
-
+9. Large display popup for a featured paramteter See Below.
 To Do:
 
 1. continue implementing verticle and horizontal cursors that provide useful measurements
@@ -24,7 +28,7 @@ and Parameter select frame for logging looks like this
 
 ![image](https://github.com/ornea/PyCRO/assets/15388230/9259286b-5bd1-41a7-b192-46781ea63ab5)
 
-and Featured Parameter Popup Window looks like this (hand when viewing from across the shop)
+and Featured Parameter Popup Window looks like this (useful when viewing from across the workshop)
 
 ![image](https://github.com/ornea/PyCRO/assets/15388230/9b0d0d41-7d5e-4fe2-8fb3-d39b597beb6b)
 
