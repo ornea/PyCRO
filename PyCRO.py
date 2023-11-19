@@ -141,8 +141,10 @@ STOREtrace = False          # Store and display trace
                             # 3=Hann (B=1.5), 4=Blackman (B=1.73), 5=Nuttall (B=2.02), 6=Flat top (B=3.77)
 SIGNALlevel = 0.0            # Level of audio input 0 to 1
 
-Marker1x = 0                # marker pip 1 location
-Marker1y = 0
+
+vertMarkerNo = 0
+Marker1x = [0,0]                # marker pip 1 location
+Marker1y = [0,0]
 
 Marker2x = 0                # marker pip 2
 Marker2y = 0
@@ -170,11 +172,20 @@ def on_click(self, event):
 def Bmarker1(event):
     global Marker1x
     global Marker1y
+    global Y0T
+    global X0L
+    global GRH
+    global GRW
+    global vertMarkerNo
 
-    Marker1x=event.x
-    Marker1y=event.y
+
+    if ((event.x > 20) & (event.y >20) & (event.y<Y0T + GRH) & (event.x<X0L + GRW)):
+        Marker1x[vertMarkerNo]=event.x
+        Marker1y[vertMarkerNo]=event.y
     
-    print ( "button 2 clicked at", event.x, event.y )
+    vertMarkerNo  ^= 1
+    print (vertMarkerNo)
+    print ( "button 1 clicked at", event.x, event.y )
 
 def Bmarker2(event):
     global Marker2x
@@ -749,10 +760,18 @@ def MakeScreen():       # Update the screen with traces and text
           if (n % 12) == 0:
             xpos += 1
         ca.create_line(ss, fill=COLORtrace2)            # and avoid writing lines with 1 coordinate
+ 
+    txt = "             Sample rate: " + str(SAMPLErate/1000000) +" MHz"
+ 
+    if(len(SIGNAL1) != 0):
+        Marker1yy0 = SIGNAL1[(Marker1x[0]-X0L)*12   ]
+        Marker1yy1 = SIGNAL1[(Marker1x[1]-X0L)*12   ]
+        ca.create_polygon([Marker1x[0],Marker1yy0-3,Marker1x[0]-3,Marker1yy0-15,Marker1x[0]+3,Marker1yy0-15], outline=COLORMarker1, fill=COLORMarker1, width=1)
+        ca.create_polygon([Marker1x[1],Marker1yy1-3,Marker1x[1]-3,Marker1yy1-15,Marker1x[1]+3,Marker1yy1-15], outline=COLORMarker1, fill=COLORMarker1, width=1)
+        txt = txt + "    Vert Cursor0:(" + str(Marker1x[0]) + "," + str(Marker1yy0) + ")"  
+    #ca.create_line(Marker1x,GRWN,Marker1x,Y0T + GRH,fill=COLORMarker1)
 
     # General information on top of the grid
-    txt = "             Sample rate: " + str(SAMPLErate/1000000) +" MHz"
-    txt = txt + "    Free Space"
 
     x = X0L
     y = 12
@@ -829,8 +848,9 @@ def MakeScreen():       # Update the screen with traces and text
     x = X0L+800
     y = 12
     idTXT = ca.create_text (x, y, text=txt, anchor=W, fill=COLORtext)
-    ca.create_line(Marker1x,Y0T,Marker1x,GRHN+Y0T,fill=COLORMarker1)
-    #ca.create_line(Marker1x,GRWN,Marker1x,Y0T + GRH,fill=COLORMarker1)
+    ca.create_line(Marker1x[0],Y0T,Marker1x[0],GRHN+Y0T,fill=COLORMarker1)
+    ca.create_line(Marker1x[1],Y0T,Marker1x[1],GRHN+Y0T,fill=COLORMarker1)
+    
 
 # ================ Make Screen ==========================
 
