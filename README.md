@@ -11,6 +11,8 @@ Features :
 7. Adjust Vertical scale
 8. Select Coupling
 
+There appears to be many python based ds1054z apps but most were tested on linux.  This offering was developed on W10
+
 Main window looks like this
 ![image](https://github.com/ornea/PyCRO/assets/15388230/cd69f031-4088-4964-addd-24543ee86608)
 
