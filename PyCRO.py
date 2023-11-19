@@ -32,12 +32,7 @@ import tkinter.simpledialog as simpledialog
 #from tkSimpleDialog import askstring
 #from tkMessageBox import *
 
-# Update the next lines for your own default settings:
-path_to_save = "captures\\"
-file_format = "bmp"
-#DS1054Z = "192.168.1.61"
-# Rigol/LXI specific constants
-
+shutdown = "no"
 
 NUMPYenabled = True         # If NUMPY installed, then the FFT calculations is 4x faster than the own FFT calculation
 
@@ -225,8 +220,6 @@ def CHANNELset(event):
     UpdateScreen()          # Always Update
 
 def BParamList():
-    global var1
-    global var2
     global MEASlistLog
     global MEASlistChk
 
@@ -248,6 +241,8 @@ def BParamList():
 def xxx(varv):
     print (varv)
     
+    
+    
 def selAllParams():
     for checkers in range(len(MEASlistChk)):
         MEASlistChk[checkers].set(1)
@@ -255,6 +250,8 @@ def selAllParams():
 def deSelAllParams():
     for checkers in range(len(MEASlistChk)):
         MEASlistChk[checkers].set(0)
+
+
 
 def COUPset(event):
      scope.write(":CHAN" + str(CHANNEL) + ":COUP " + COUPlist[cbC.current()]) 
@@ -264,23 +261,23 @@ def BLogFData():
         bL["text"] = "LOG ON"
     else:
         bL["text"] = "LOG OFF"
+
+def BPopupFeatured():
+    #lFPopup
+    #frameFeatured = LabelFrame(root, bg = COLORyellow, background=COLORlightgrey, borderwidth=10, relief=RIDGE, text="Parameter Selector",font=(60))
+    frameFeatured.place(x = 50, y = 20, width = 980  , height = 400)
+    #for checkers in range(len(MEASlistChk)):
+    #    cRow = int(checkers / 5) + 1
+    #    cCol =  (checkers % 5) + 0
+    #    Checkbutton(frame4, text=MEASlist[checkers], variable=MEASlistChk[checkers],width = chkBoxWidth, height = chkBoxHeight).grid(row = cRow, column = cCol, padx=5, pady=5)
+    #Button(frameFeatured, text="Close", width=Buttonwidth1, command=hideFeatFrame).grid(row = 2 , column = 1,  padx=5, pady=5)
+    #Button(frameFeatured, text="Select All", width=Buttonwidth1,command=selAllParams).grid(row=2,column = 2, padx=5, pady=5)
+    #Button(frameFeatured, text="De-Select All", width=Buttonwidth1,command=deSelAllParams).grid(row= 2, column = 3, padx=5, pady=5)
                 
-def BSampledepth():
-    global SAMPLEdepth
-    global RUNstatus
-
-    if (RUNstatus != 0):
-        showwarning("WARNING","Stop sweep first")
-        return()
-
-    if SAMPLEdepth == 0:
-        SAMPLEdepth = 1
-    else:
-        SAMPLEdepth = 0
-    if RUNstatus == 0:      # Update if stopped
-        UpdateScreen()
-
-
+def hideFeatFrame():
+    #frameFeatured.grid_forget()
+    frameFeatured.place_forget()
+    
 def BSTOREtrace():
     global STOREtrace
     global SIGNAL1
@@ -390,36 +387,12 @@ def BTriggerLevel():
 def is_between(a, x, b):
     return min(a, b) < x < max(a, b)
 
-def BStopfrequency():
-    global triggerLevel
-    global STOPfrequency
-    global RUNstatus
-
-    # if (RUNstatus != 0):
-    #    showwarning("WARNING","Stop sweep first")
-    #    return()
-
-    s = simpledialog.askstring("Stopfrequency: ","Value: " + str(STOPfrequency) + " Hz\n\nNew value:\n")
-
-    if (s == None):         # If Cancel pressed, then None
-        return()
-
-    try:                    # Error if for example no numeric characters or OK pressed without input (s = "")
-        v = float(s)
-    except:
-        s = "error"
-
-    if s != "error":
-        STOPfrequency = abs(v)
-
-    if STOPfrequency < 10:  # Minimum stopfrequency 10 Hz
-        STOPfrequency = 10
-
-    if triggerLevel >= STOPfrequency:
-        triggerLevel = STOPfrequency - 1
-
-    if RUNstatus == 0:      # Update if stopped
-        UpdateTrace()
+def BShutdown():
+    global shutdown
+    shutdown = "yes"
+    print("Shutting Down")
+    scope.close()
+    exit(0)
 
 # ============================================ Main routine ====================================================
 
@@ -463,6 +436,8 @@ def Sweep():   # Read samples and store the data into the arrays
     while (True):                                           # Main loop
 
         # RUNstatus = 1 : Open Stream
+        if (shutdown == "yes"):
+            exit()
         if (RUNstatus == 1):
             TRACESopened = 1
 
@@ -521,6 +496,9 @@ def Sweep():   # Read samples and store the data into the arrays
         MEASlist[cbF.current()]
 
         lF.config(text=measF )
+        
+        lFPopupValue.config(text=measF )
+        lFPopupParam.config(text=MEASlist[cbF.current()])
         
         cbC.set(scope.query(":CHAN"+str(CHANNEL) + ":COUP?"))
         
@@ -889,12 +867,10 @@ frame1.pack(side=TOP, expand=1, fill=X)
 frame2 = Frame(root, background="black", borderwidth=5, relief=RIDGE)
 frame2.pack(side=TOP, expand=1, fill=X)
 
-if SNenabled == True:
-    frame2a = Frame(root, background=COLORframes, borderwidth=5, relief=RIDGE)
-    frame2a.pack(side=TOP, expand=1, fill=X)
-
 frame3 = Frame(root, background=COLORframes, borderwidth=5, relief=RIDGE)
 frame3.pack(side=TOP, expand=1, fill=X)
+
+frameFeatured = LabelFrame(root, background=COLORlightgrey, borderwidth=5, relief=RIDGE, text="Featured Parameter",font=(60))
 
 ca = Canvas(frame2, width=CANVASwidth, height=CANVASheight, background=COLORcanvas)
 ca.pack(side=TOP)
@@ -910,8 +886,7 @@ cbCh.set(CHANlist[CHANNEL-1])
 cbCh.pack(side=LEFT, padx=5, pady=5)
 cbCh.bind("<<ComboboxSelected>>", CHANNELset)
 
-b = Button(frame1, text="RESET Scope", width=Buttonwidth1, command=BReset)
-b.pack(side=LEFT, padx=5, pady=5)
+
 
 b = Button(frame1, text="Sel Log Params", width=Buttonwidth1, command=BParamList)
 b.pack(side=LEFT, padx=5, pady=5)
@@ -928,9 +903,23 @@ cbF = ttk.Combobox(frame1, values=MEASlist,  width=Buttonwidth1)
 cbF.set(MEASlist[7])
 cbF.pack(side=LEFT, padx=5, pady=5)
 
-lF = Label(frame1, text="0", width=Buttonwidth1,)
+lF = Label(frame1, text="0", width=Buttonwidth1)
 lF.pack(side=LEFT, padx=5, pady=5)
 
+b = Button(frame1, text="Popup Feat", width=Buttonwidth1, command=BPopupFeatured)
+b.pack(side=LEFT, padx=5, pady=5)
+
+lFPopupParam = Label(frameFeatured, text="000000", width=Buttonwidth1)#.grid(row = 1 , column = 1,  padx=5, pady=5)
+lFPopupParam.config(font =("Courier", 84))
+lFPopupParam.grid(row = 1 , columnspan = 5,  padx=5, pady=5)
+
+lFPopupValue = Label(frameFeatured, text="000000", width=Buttonwidth1)#.grid(row = 1 , column = 1,  padx=5, pady=5)
+lFPopupValue.config(font = ("none", 100))
+lFPopupValue.grid(row = 2 , columnspan = 5,  padx=5, pady=5)
+
+Button(frameFeatured, text="Close", width=Buttonwidth1, command=hideFeatFrame).grid(row = 8 , columnspan = 5,  padx=5, pady=5)
+#Button(frameFeatured, text="Select All", width=Buttonwidth1,command=selAllParams).grid(row=8,column = 2, padx=5, pady=5)
+#Button(frameFeatured, text="De-Select All", width=Buttonwidth1,command=deSelAllParams).grid(row= 8, column = 3, padx=5, pady=5)
 
 b = Button(frame1, text="Store trace", width=Buttonwidth1, command=BSTOREtrace)
 b.pack(side=RIGHT, padx=5, pady=5)
@@ -941,16 +930,16 @@ b.pack(side=LEFT, padx=5, pady=5)
 b = Button(frame3, text="Stop", width=Buttonwidth2, command=BStop)
 b.pack(side=LEFT, padx=5, pady=5)
 
-b = Button(frame3, text="NORM/LONG", width=Buttonwidth1, command=BSampledepth)
-b.pack(side=LEFT, padx=5, pady=5)
-
 b = Button(frame3, text="Single", width=Buttonwidth1, command=BSINGLEsweep)
 b.pack(side=LEFT, padx=5, pady=5)
 
 b = Button(frame3, text="Trigger", width=Buttonwidth2, command=BTriggerLevel)
 b.pack(side=LEFT, padx=5, pady=5)
 
-b = Button(frame3, text="Stopfreq", width=Buttonwidth2, command=BStopfrequency)
+b = Button(frame3, text="Shutdown", width=Buttonwidth2, command=BShutdown)
+b.pack(side=LEFT, padx=5, pady=5)
+
+b = Button(frame3, text="RESET Scope", width=Buttonwidth1, command=BReset)
 b.pack(side=LEFT, padx=5, pady=5)
 
 b = Button(frame3, text="s/div*2", width=Buttonwidth2, command=Blevel4)
@@ -968,6 +957,7 @@ b.pack(side=RIGHT, padx=5, pady=5)
 # ================ Call main routine ===============================
 root.update()               # Activate updated screens
 #SELECTaudiodevice()
+print ("here")
 Sweep()
 
 
