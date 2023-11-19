@@ -65,14 +65,15 @@ startLogTime =""
 SCALElist = [0.01,0.02,0.05,0.1,0.2,0.5,1,2,5]
 DBdivlist = [1, 2, 3, 5, 10, 20] # dB per division
 DBdivindex = 5              # 20 dB/div as initial value
-MEASlist = ["VMAX","VMIN","VPP","VTOP","VBASe","VAMP","VAVG",
+
+ParameterList = ["VMAX","VMIN","VPP","VTOP","VBASe","VAMP","VAVG",
     "VRMS","OVERshoot","PREShoot","MARea","MPARea","PERiod",
     "FREQuency","RTIMe","FTIMe","PWIDth","NWIDth","PDUTy",
     "NDUTy","TVMAX",
     "TVMIN","PSLEWrate","NSLEWrate","VUPper","VMID","VLOWer",
     "VARIance","PVRMS","PPULses","NPULses","PEDGes","NEDGes"]
 
-MEASunitslist = ["V","V","V","V","V","V","V",
+ParameterUnitsList = ["V","V","V","V","V","V","V",
     "V","V","V","V/S","V/S","S",
     "Hz","S","S","S","S","%",
     "%","S",
@@ -80,8 +81,8 @@ MEASunitslist = ["V","V","V","V","V","V","V",
     "V2","V","P","P","E","E"]
 
 
-COUPlist = ["DC","AC","GND"]
-CHANlist = ["CHANNEL 1","CHANNEL 2","CHANNEL 3","CHANNEL 4"]
+ChannelCouplinglist = ["DC","AC","GND"]
+ChannelList = ["CHANNEL 1","CHANNEL 2","CHANNEL 3","CHANNEL 4"]
 
 
 # Colors that can be modified
@@ -100,6 +101,9 @@ COLORyellow = "#ffff00"
 COLORgreen = "#00ff00"
 COLORmagenta = "#00ffff"
 COLORlightgrey = "#D3D3D3"
+COLORMarker1= "#ff0000"
+COLORMarker2= "#00ffff"
+COLORMarkerP= "#ffff00"
 
 # Button sizes that can be modified
 Buttonwidth1 = 12
@@ -115,15 +119,6 @@ VoltPerDiv = "0"
 VoltsPeakPeak = "0"
 SweepNo = 0 
 
-SNenabled= False            # If Signal to Noise is enabled in the software
-CENTERsignalfreq = 1000     # Center signal frequency of signal bandwidth for S/N measurement
-STARTsignalfreq = 950.0     # triggerLevel of signal bandwidth for S/N measurement
-STOPsignalfreq = 1050.0     # Stopfrequency of signal bandwidth for S/N measurement
-SNfreqstep = 100            # Frequency step S/N frequency
-SNmeasurement = True       # True for signal to noise measurement between signal and displayed bandwidth
-SNresult = 0.0              # Result of signal to noise measurement
-SNwidth = 0
-
 
 # Other global variables required in various routines
 
@@ -138,9 +133,6 @@ SIGNAL1 = []                # trace channel 1
 FFTresult = []              # FFT result
 T1line = []                 # Trace line channel 1
 T2line = []                 # Trace line channel 2
-
-S1line = []                 # Line for start of signal band indication
-S2line = []                 # line for stop of signal band indication
 
 RUNstatus = 1               # 0 stopped, 1 start, 2 running, 3 stop now, 4 stop and restart
 STOREtrace = False          # Store and display trace
@@ -179,6 +171,8 @@ def Bmarker1(event):
 
     Marker1x=event.x
     Marker1y=event.y
+    
+    print ( "button 2 clicked at", event.x, event.y )
 
 def Bmarker2(event):
     global Marker2x
@@ -220,22 +214,21 @@ def CHANNELset(event):
     UpdateScreen()          # Always Update
 
 def BParamList():
-    global MEASlistLog
-    global MEASlistChk
+    global ParameterListChk
 
     noOfCols = 5
     chkBoxWidth = 10
     chkBoxHeight = 1
 
-    frame4 = LabelFrame(root, bg = COLORyellow, background=COLORlightgrey, borderwidth=10, relief=RIDGE, text="Parameter Selector",font=(60))
-    frame4.place(x = 250, y = 20, width = (noOfCols * chkBoxWidth)*8 + (noOfCols * 4)*8  , height = 310)
-    for checkers in range(len(MEASlistChk)):
+    ParameterLoggingSelectionFrame = LabelFrame(root, bg = COLORyellow, background=COLORlightgrey, borderwidth=10, relief=RIDGE, text="Parameter Selector",font=(60))
+    ParameterLoggingSelectionFrame.place(x = 250, y = 20, width = (noOfCols * chkBoxWidth)*8 + (noOfCols * 4)*8  , height = 310)
+    for checkers in range(len(ParameterListChk)):
         cRow = int(checkers / 5) + 1
         cCol =  (checkers % 5) + 0
-        Checkbutton(frame4, text=MEASlist[checkers], variable=MEASlistChk[checkers],width = chkBoxWidth, height = chkBoxHeight).grid(row = cRow, column = cCol, padx=5, pady=5)
-    Button(frame4, text="Close", width=chkBoxWidth, height = chkBoxHeight,command=frame4.destroy).grid(row = cRow + 2 , column = 1,  padx=5, pady=5)
-    Button(frame4, text="Select All", width=chkBoxWidth, height = chkBoxHeight,command=selAllParams).grid(row=cRow + 2,column = 2, padx=5, pady=5)
-    Button(frame4, text="De-Select All", width=chkBoxWidth, height = chkBoxHeight,command=deSelAllParams).grid(row= cRow + 2, column = 3, padx=5, pady=5)
+        Checkbutton(ParameterLoggingSelectionFrame, text=ParameterList[checkers], variable=ParameterListChk[checkers],width = chkBoxWidth, height = chkBoxHeight).grid(row = cRow, column = cCol, padx=5, pady=5)
+    Button(ParameterLoggingSelectionFrame, text="Close", width=chkBoxWidth, height = chkBoxHeight,command=ParameterLoggingSelectionFrame.destroy).grid(row = cRow + 2 , column = 1,  padx=5, pady=5)
+    Button(ParameterLoggingSelectionFrame, text="Select All", width=chkBoxWidth, height = chkBoxHeight,command=selAllParams).grid(row=cRow + 2,column = 2, padx=5, pady=5)
+    Button(ParameterLoggingSelectionFrame, text="De-Select All", width=chkBoxWidth, height = chkBoxHeight,command=deSelAllParams).grid(row= cRow + 2, column = 3, padx=5, pady=5)
     #UpdateAll()          # Always Update
     
 def xxx(varv):
@@ -244,37 +237,28 @@ def xxx(varv):
     
     
 def selAllParams():
-    for checkers in range(len(MEASlistChk)):
-        MEASlistChk[checkers].set(1)
+    for checkers in range(len(ParameterListChk)):
+        ParameterListChk[checkers].set(1)
 
 def deSelAllParams():
-    for checkers in range(len(MEASlistChk)):
-        MEASlistChk[checkers].set(0)
+    for checkers in range(len(ParameterListChk)):
+        ParameterListChk[checkers].set(0)
 
 
 
-def COUPset(event):
-     scope.write(":CHAN" + str(CHANNEL) + ":COUP " + COUPlist[cbC.current()]) 
+def ChannelCouplingSet(event):
+     scope.write(":CHAN" + str(CHANNEL) + ":COUP " + ChannelCouplinglist[cbChannelCoupling.current()]) 
      
-def BLogFData():
+def BToggleDataLogging():
     if(bL["text"] == "LOG OFF"):
         bL["text"] = "LOG ON"
     else:
         bL["text"] = "LOG OFF"
 
-def BPopupFeatured():
-    #lFPopup
-    #frameFeatured = LabelFrame(root, bg = COLORyellow, background=COLORlightgrey, borderwidth=10, relief=RIDGE, text="Parameter Selector",font=(60))
-    frameFeatured.place(x = 50, y = 20, width = 980  , height = 400)
-    #for checkers in range(len(MEASlistChk)):
-    #    cRow = int(checkers / 5) + 1
-    #    cCol =  (checkers % 5) + 0
-    #    Checkbutton(frame4, text=MEASlist[checkers], variable=MEASlistChk[checkers],width = chkBoxWidth, height = chkBoxHeight).grid(row = cRow, column = cCol, padx=5, pady=5)
-    #Button(frameFeatured, text="Close", width=Buttonwidth1, command=hideFeatFrame).grid(row = 2 , column = 1,  padx=5, pady=5)
-    #Button(frameFeatured, text="Select All", width=Buttonwidth1,command=selAllParams).grid(row=2,column = 2, padx=5, pady=5)
-    #Button(frameFeatured, text="De-Select All", width=Buttonwidth1,command=deSelAllParams).grid(row= 2, column = 3, padx=5, pady=5)
+def BPopupFeaturedFrame():
+    frameFeatured.place(x = 50, y = 50, width = 980  , height = 400)
                 
-def hideFeatFrame():
+def HideFeaturedFrame():
     #frameFeatured.grid_forget()
     frameFeatured.place_forget()
     
@@ -419,7 +403,6 @@ def Sweep():   # Read samples and store the data into the arrays
     global SAMPLEdepth
     global UPDATEspeed
     global triggerLevel
-    global STOPfrequency
     global COLORred
     global COLORcanvas
     global COLORyellow
@@ -490,17 +473,17 @@ def Sweep():   # Read samples and store the data into the arrays
 
         measVBAS = scope.get_channel_measurement(CHANNEL, "VBAS", type='CURRent')
         
-        measF = scope.get_channel_measurement(CHANNEL, MEASlist[cbF.current()], type='CURRent')
+        measF = scope.get_channel_measurement(CHANNEL, ParameterList[cbF.current()], type='CURRent')
         
-        measF = str(myQuantiphy(measF,MEASunitslist[cbF.current()]))
-        MEASlist[cbF.current()]
+        measF = str(myQuantiphy(measF,ParameterUnitsList[cbF.current()]))
+        ParameterList[cbF.current()]
 
-        lF.config(text=measF )
+        lFeaturedParameter.config(text=measF )
         
-        lFPopupValue.config(text=measF )
-        lFPopupParam.config(text=MEASlist[cbF.current()])
+        lPopupFeaturedValue.config(text=measF )
+        lPopupFeaturedParam.config(text=ParameterList[cbF.current()])
         
-        cbC.set(scope.query(":CHAN"+str(CHANNEL) + ":COUP?"))
+        cbChannelCoupling.set(scope.query(":CHAN"+str(CHANNEL) + ":COUP?"))
         
         logData()
 
@@ -588,9 +571,9 @@ def logData():
             NoOfParamsToLog = 0
             header = b"Timestamp" 
             
-            for checkers in range(len(MEASlistChk)):
-                if(MEASlistChk[checkers].get()):
-                    header += ",".encode("utf-8") + MEASlist[checkers].encode("utf-8")
+            for checkers in range(len(ParameterListChk)):
+                if(ParameterListChk[checkers].get()):
+                    header += ",".encode("utf-8") + ParameterList[checkers].encode("utf-8")
                     NoOfParamsToLog += 1
             header += "\n".encode("utf-8")
             if (NoOfParamsToLog == 0):
@@ -606,9 +589,9 @@ def logData():
             nextLogTime += 10
             readings = b""
             readings += str(time.time() - startLogTime).encode("utf-8")
-            for checkers in range(len(MEASlistChk)):
-                if(MEASlistChk[checkers].get()):
-                    reading = scope.get_channel_measurement(CHANNEL, MEASlist[checkers], type='CURRent')
+            for checkers in range(len(ParameterListChk)):
+                if(ParameterListChk[checkers].get()):
+                    reading = scope.get_channel_measurement(CHANNEL, ParameterList[checkers], type='CURRent')
                     
                     readings += ",".encode("utf-8") + str(reading).encode("utf-8")
             readings += "\n".encode("utf-8")
@@ -625,7 +608,7 @@ def setupChannel(CHANNEL):
 
     scope.write(":TRIGger:EDGe:SOURce CHANnel" + str(CHANNEL))
 
-    cbC.set(scope.query(":CHAN" + str(CHANNEL) + ":COUP?")) 
+    cbChannelCoupling.set(scope.query(":CHAN" + str(CHANNEL) + ":COUP?")) 
 
     scope.set_channel_offset(CHANNEL, 0)
 
@@ -646,10 +629,6 @@ def myQuantiphy(value,unit):
     if(unit == "%"):
         return (str(value * 100) + "%")
     return Quantity(value,unit)
-
-#def UpdateAll():        # Update Data, trace and screen
-#    UpdateScreen()      # Update the screen
-
 
 def UpdateTrace():      # Update trace and screen
     UpdateScreen()      # Update the screen
@@ -677,17 +656,11 @@ def MakeScreen():       # Update the screen with traces and text
     global GRH          # Screenheight
     global T1line
     global T2line
-    global S1line
-    global S2line
     global STOREtrace
     global Vdiv         # Number of vertical divisions
     global RUNstatus    # 0 stopped, 1 start, 2 running, 3 stop now, 4 stop and restart
     global SAMPLEdepth  # 0 norm, 1 long
     global triggerLevel
-    global STOPfrequency
-    global CENTERsignalfreq
-    global STARTsignalfreq
-    global STOPsignalfreq
     global SAMPLErate
     global SAMPLEsize
     global SIGNALlevel   # Level of signal input 0 to 1
@@ -776,7 +749,6 @@ def MakeScreen():       # Update the screen with traces and text
     idTXT = ca.create_text (x, y, text=txt, anchor=W, fill=COLORtext)
 
     # Start and stop frequency and dB/div and trace mode
-    #txt = str(triggerLevel/1000000) + " to " + str(STOPfrequency/1000000) + " MHz"
     txt = "Sweep No: " + str(SweepNo)
     txt = txt +  "    " + str(VoltPerDiv) + " V/div"
     txt = txt + "    Vpp: " + str(myQuantiphy(VoltsPeakPeak,'V')) 
@@ -835,7 +807,6 @@ def MakeScreen():       # Update the screen with traces and text
 # show the values at the mouse cursor
 # note the magic numbers below were determined by looking at the cursor values
 # not sure why they don't correspond to X0T and Y0T
-    #cursorx = (triggerLevel + (root.winfo_pointerx()-root.winfo_rootx()-X0L-4) * (STOPfrequency-triggerLevel)/GRW) /1000000
     VPD = float(VoltPerDiv)
     VoltsDivOffset = VPD * 4
     #VoltsDiv =  VoltsDiv - VPD
@@ -848,14 +819,16 @@ def MakeScreen():       # Update the screen with traces and text
     x = X0L+800
     y = 12
     idTXT = ca.create_text (x, y, text=txt, anchor=W, fill=COLORtext)
+    ca.create_line(Marker1x,Y0T,Marker1x,GRHN+Y0T,fill=COLORMarker1)
+    #ca.create_line(Marker1x,GRWN,Marker1x,Y0T + GRH,fill=COLORMarker1)
 
 # ================ Make Screen ==========================
 
 root=Tk()
 
-MEASlistChk = []
-for i in range(len (MEASlist)):
-    MEASlistChk.append(IntVar())
+ParameterListChk = []
+for i in range(len (ParameterList)):
+    ParameterListChk.append(IntVar())
 
 root.title("Rigol Trace Viewer Nov 2023 JPR")
 
@@ -873,7 +846,10 @@ frame3.pack(side=TOP, expand=1, fill=X)
 frameFeatured = LabelFrame(root, background=COLORlightgrey, borderwidth=5, relief=RIDGE, text="Featured Parameter",font=(60))
 
 ca = Canvas(frame2, width=CANVASwidth, height=CANVASheight, background=COLORcanvas)
+ca.bind("<Button-1>", Bmarker1)
+ca.bind("<Button-3>", Bmarker2)
 ca.pack(side=TOP)
+ca.config(cursor="crosshair")
 
 b = Button(frame1, text="Screenshot", width=Buttonwidth1, command=BgetScreenshot)
 b.pack(side=LEFT, padx=5, pady=5)
@@ -881,45 +857,40 @@ b.pack(side=LEFT, padx=5, pady=5)
 b = Button(frame1, text="Auto Scale", width=Buttonwidth1, command=BAutoScale)
 b.pack(side=LEFT, padx=5, pady=5)
 
-cbCh = ttk.Combobox(frame1, values=CHANlist,  width=Buttonwidth1)
-cbCh.set(CHANlist[CHANNEL-1])
+cbCh = ttk.Combobox(frame1, values=ChannelList,  width=Buttonwidth1)
+cbCh.set(ChannelList[CHANNEL-1])
 cbCh.pack(side=LEFT, padx=5, pady=5)
 cbCh.bind("<<ComboboxSelected>>", CHANNELset)
-
-
 
 b = Button(frame1, text="Sel Log Params", width=Buttonwidth1, command=BParamList)
 b.pack(side=LEFT, padx=5, pady=5)
 
-bL = Button(frame1, text="LOG OFF", width=Buttonwidth1, command=BLogFData)
+bL = Button(frame1, text="LOG OFF", width=Buttonwidth1, command=BToggleDataLogging)
 bL.pack(side=LEFT, padx=5, pady=5)
 
+cbChannelCoupling = ttk.Combobox(frame1, values=ChannelCouplinglist,  width=Buttonwidth1)
+cbChannelCoupling.pack(side=LEFT, padx=5, pady=5)
+cbChannelCoupling.bind("<<ComboboxSelected>>", ChannelCouplingSet)
 
-cbC = ttk.Combobox(frame1, values=COUPlist,  width=Buttonwidth1)
-cbC.pack(side=LEFT, padx=5, pady=5)
-cbC.bind("<<ComboboxSelected>>", COUPset)
-
-cbF = ttk.Combobox(frame1, values=MEASlist,  width=Buttonwidth1)
-cbF.set(MEASlist[7])
+cbF = ttk.Combobox(frame1, values=ParameterList,  width=Buttonwidth1)
+cbF.set(ParameterList[7])
 cbF.pack(side=LEFT, padx=5, pady=5)
 
-lF = Label(frame1, text="0", width=Buttonwidth1)
-lF.pack(side=LEFT, padx=5, pady=5)
+lFeaturedParameter = Label(frame1, text="0", width=Buttonwidth1)
+lFeaturedParameter.pack(side=LEFT, padx=5, pady=5)
 
-b = Button(frame1, text="Popup Feat", width=Buttonwidth1, command=BPopupFeatured)
+b = Button(frame1, text="Popup Feat", width=Buttonwidth1, command=BPopupFeaturedFrame)
 b.pack(side=LEFT, padx=5, pady=5)
 
-lFPopupParam = Label(frameFeatured, text="000000", width=Buttonwidth1)#.grid(row = 1 , column = 1,  padx=5, pady=5)
-lFPopupParam.config(font =("Courier", 84))
-lFPopupParam.grid(row = 1 , columnspan = 5,  padx=5, pady=5)
+lPopupFeaturedParam = Label(frameFeatured, text="000000", width=Buttonwidth1)#.grid(row = 1 , column = 1,  padx=5, pady=5)
+lPopupFeaturedParam.config(font =("Courier", 84))
+lPopupFeaturedParam.grid(row = 1 , columnspan = 5,  padx=5, pady=5)
 
-lFPopupValue = Label(frameFeatured, text="000000", width=Buttonwidth1)#.grid(row = 1 , column = 1,  padx=5, pady=5)
-lFPopupValue.config(font = ("none", 100))
-lFPopupValue.grid(row = 2 , columnspan = 5,  padx=5, pady=5)
+lPopupFeaturedValue = Label(frameFeatured, text="000000", width=Buttonwidth1)#.grid(row = 1 , column = 1,  padx=5, pady=5)
+lPopupFeaturedValue.config(font = ("none", 100))
+lPopupFeaturedValue.grid(row = 2 , columnspan = 5,  padx=5, pady=5)
 
-Button(frameFeatured, text="Close", width=Buttonwidth1, command=hideFeatFrame).grid(row = 8 , columnspan = 5,  padx=5, pady=5)
-#Button(frameFeatured, text="Select All", width=Buttonwidth1,command=selAllParams).grid(row=8,column = 2, padx=5, pady=5)
-#Button(frameFeatured, text="De-Select All", width=Buttonwidth1,command=deSelAllParams).grid(row= 8, column = 3, padx=5, pady=5)
+Button(frameFeatured, text="Close", width=Buttonwidth1, command=HideFeaturedFrame).grid(row = 8 , columnspan = 5,  padx=5, pady=5)
 
 b = Button(frame1, text="Store trace", width=Buttonwidth1, command=BSTOREtrace)
 b.pack(side=RIGHT, padx=5, pady=5)
@@ -956,10 +927,4 @@ b.pack(side=RIGHT, padx=5, pady=5)
 
 # ================ Call main routine ===============================
 root.update()               # Activate updated screens
-#SELECTaudiodevice()
-print ("here")
 Sweep()
-
-
-
-
