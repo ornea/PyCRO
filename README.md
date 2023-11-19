@@ -11,6 +11,10 @@ Features :
 7. Adjust Vertical scale
 8. Select Coupling
 
+To Do:
+
+1. continue implementing verticle and horizontal cursors that provide useful measurements
+
 There appears to be many python based ds1054z apps but most were tested on linux.  This offering was developed on W10
 
 Main window looks like this
