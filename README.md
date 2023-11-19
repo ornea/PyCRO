@@ -20,6 +20,10 @@ and Parameter select frame for logging looks like this
 
 ![image](https://github.com/ornea/PyCRO/assets/15388230/9259286b-5bd1-41a7-b192-46781ea63ab5)
 
+and Featured Parameter Popup Window looks like this (hand when viewing from across the shop)
+
+![image](https://github.com/ornea/PyCRO/assets/15388230/9b0d0d41-7d5e-4fe2-8fb3-d39b597beb6b)
+
 
 I needed a remote viewer and logger so took Rich Heslip VE3MKC PDSA code and badly butchered it.  I am not familiar with licenses but his blog stated 
 ![image](https://github.com/ornea/PyCRO/assets/15388230/fdde96d4-5cc6-406a-9990-3d14dbd92d9b)
