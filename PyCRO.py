@@ -13,7 +13,7 @@
 import os
 import math
 import time
-import numpy
+import numpy as np
 #import tkFont
 import tkinter.font as TkFont
 import sys
@@ -32,6 +32,7 @@ import tkinter.simpledialog as simpledialog
 #from tkSimpleDialog import askstring
 #from tkMessageBox import *
 
+DS_ADDR = "192.168.1.240"
 shutdown = "no"
 
 NUMPYenabled = True         # If NUMPY installed, then the FFT calculations is 4x faster than the own FFT calculation
@@ -117,9 +118,10 @@ CHANNEL = 1
 triggerLevel = 0.0        # triggerLevel
 STOPfrequency = 10000000.0     # Stopfrequency
 TimebasePerDiv = "0" 
-VoltPerDiv = "0"
+VoltsPerDiv = "0"
 VoltsPeakPeak = "0"
 SweepNo = 0 
+VoltsOffset = 0
 
 
 # Other global variables required in various routines
@@ -143,11 +145,13 @@ SIGNALlevel = 0.0            # Level of audio input 0 to 1
 
 
 vertMarkerNo = 0
-Marker1x = [0,0]                # marker pip 1 location
+Marker1x = [X0L,X0L]                # marker pip 1 location
 Marker1y = [0,0]
 
 Marker2x = 0                # marker pip 2
 Marker2y = 0
+
+MarkerYvalues = [0,0]
 
 if NUMPYenabled == True:
     try:
@@ -193,7 +197,7 @@ def Bmarker2(event):
 
     Marker2x=event.x
     Marker2y=event.y
-    #print ( "button 2 clicked at", event.x, event.y )
+    print ( "button 2 clicked at", event.x, event.y )
 
 def BgetScreenshot():
     #from PIL import Image
@@ -221,9 +225,7 @@ def BAutoScale():
 def CHANNELset(event):
     global CHANNEL
     CHANNEL = cbCh.current() + 1
-    setupChannel(CHANNEL)
-   
-    
+    setupChannel(CHANNEL)    
     UpdateScreen()          # Always Update
 
 def my_get_channel_measurement(ch,param,type="CURRent"):
@@ -266,7 +268,6 @@ def deSelAllParams():
         ParameterListChk[checkers].set(0)
 
 
-
 def ChannelCouplingSet(event):
      scope.write(":CHAN" + str(CHANNEL) + ":COUP " + ChannelCouplinglist[cbChannelCoupling.current()]) 
      
@@ -280,7 +281,6 @@ def BPopupFeaturedFrame():
     frameFeatured.place(x = 50, y = 50, width = 980  , height = 400)
                 
 def HideFeaturedFrame():
-    #frameFeatured.grid_forget()
     frameFeatured.place_forget()
     
 def BSTOREtrace():
@@ -315,7 +315,7 @@ def BStart():
     UpdateScreen()          # Always Update
 
 
-def Blevel1():
+def buttScaleDown():
     global CHANNEL
     
     scope.set_channel_scale(CHANNEL, scope.get_channel_scale(CHANNEL)/2, use_closest_match=True)
@@ -324,7 +324,7 @@ def Blevel1():
         UpdateTrace()
 
 
-def Blevel2():# Increase V/Div
+def buttScaleUp():# Increase V/Div
     global CHANNEL
     
     scope.set_channel_scale(CHANNEL, scope.get_channel_scale(CHANNEL)*2, use_closest_match=True)
@@ -333,13 +333,58 @@ def Blevel2():# Increase V/Div
         UpdateTrace()
 
 
-def Blevel3():
+def buttTimebaseDown():
     scope.timebase_scale /= 2
     if RUNstatus == 0:      # Update if stopped
         UpdateTrace()
 
-def Blevel4():
+def buttTimebaseUp():
     scope.timebase_scale *= 2
+
+    if RUNstatus == 0:      # Update if stopped
+        UpdateTrace()
+
+
+"""
+        The range of possible offset values depends on the current vertical scale and on
+        the probe ratio. With the probe ratio set to 1x the offset can be set between:
+
+        * -100V and +100V (if vertical scale ≥ 500mV/div), or
+        * -2V and +2V (if vertical scale < 500mV/div).
+
+        The range scales with the probe ratio. Thus, when the probe ratio is set to 10x,
+        for example, the offset could be set between:
+
+        * -1000V and +1000V (if vertical scale ≥ 5V/div), or
+        * -20V and +20V (if vertical scale < 5V/div).
+"""
+def buttOffsetDown():
+    global CHANNEL
+    global VoltsPerDiv
+    verticalScale = scope.get_channel_scale(CHANNEL)
+    probeRatio = scope.get_probe_ratio(CHANNEL)
+    print("vertscale:ratio:offset:vpd")
+    print(verticalScale)
+    print(probeRatio)
+    print(scope.get_channel_offset(CHANNEL))
+    print(VoltsPerDiv)
+    print()
+    #scope.set_channel_offset(CHANNEL,scope.get_channel_offset(CHANNEL) / 2) 
+    scope.set_channel_offset(CHANNEL,scope.get_channel_offset(CHANNEL) - VoltsPerDiv) 
+    if RUNstatus == 0:      # Update if stopped
+        UpdateTrace()
+
+def buttOffsetUp():
+    global CHANNEL
+    #scope.set_channel_offset(CHANNEL,scope.get_channel_offset(CHANNEL) * 2) 
+    scope.set_channel_offset(CHANNEL,scope.get_channel_offset(CHANNEL) + VoltsPerDiv) 
+
+    if RUNstatus == 0:      # Update if stopped
+        UpdateTrace()
+
+def buttOffsetZero():
+    global CHANNEL
+    scope.set_channel_offset(CHANNEL,0) 
 
     if RUNstatus == 0:      # Update if stopped
         UpdateTrace()
@@ -380,8 +425,8 @@ def BTriggerLevel():
 
     if triggerVvalue != "error":
         triggerLevel = triggerVvalue
-        vScale = float(scope.query(":CHANnel" + str(CHANNEL) + ":SCALe?"))
-        vOffset = float(scope.query(":CHANnel" + str(CHANNEL) + ":OFFSet?"))
+        vScale = get_channel_scale(CHANNEL) 
+        vOffset = scope.get_channel_offset(CHANNEL)
         if(  is_between(  ((-5 * vScale) - vOffset),     triggerLevel,      ((5 * vScale) - vOffset)    )  ):
             scope.write(":TRIGger:EDGe:LEVel "+str(triggerLevel))
         else:
@@ -406,7 +451,8 @@ def Sweep():   # Read samples and store the data into the arrays
     global Y0T          # Left top Y value
     global GRW          # Screenwidth
     global GRH          # Screenheight
-    global VoltPerDiv
+    global VoltsOffset
+    global VoltsPerDiv
     global VoltsPeakPeak
     global TimebasePerDiv
     global YREFerence
@@ -436,7 +482,8 @@ def Sweep():   # Read samples and store the data into the arrays
     global measVTOP
     global measVBAS
     global CHANNEL
-
+    global Marker1x
+    global MarkerYvalues
     while (True):                                           # Main loop
 
         # RUNstatus = 1 : Open Stream
@@ -446,7 +493,7 @@ def Sweep():   # Read samples and store the data into the arrays
             TRACESopened = 1
 
             try:
-                scope = DS1054Z('192.168.1.61')
+                scope = DS1054Z(DS_ADDR)
                 instrument_id = scope.idn  # ask for instrument ID
                 print (instrument_id)
                 # Check if instrument is set to accept LAN commands
@@ -456,7 +503,7 @@ def Sweep():   # Read samples and store the data into the arrays
                     print ( "Utility -> IO Setting -> RemoteIO ->    be ON" )
                     sys.exit("ERROR")
 
-                # Check if instrument is indeed a Rigol DP800 series
+                # Check if instrument is indeed a Rigol DS1 series
                 id_fields = instrument_id.split(",")
                 print (id_fields)
                 if (id_fields[company] != "RIGOL TECHNOLOGIES") or \
@@ -466,6 +513,7 @@ def Sweep():   # Read samples and store the data into the arrays
                     sys.exit("ERROR")
 
                 print ( "Instrument ID:",instrument_id )
+                print(scope.possible_channel_scale_values)
 
                 setupChannel(CHANNEL)
 
@@ -473,12 +521,17 @@ def Sweep():   # Read samples and store the data into the arrays
             except:                                         # If error in opening audio stream, show error
                 RUNstatus = 0
                 txt = "Sample rate: " + str(SAMPLErate) + ", try a lower sample rate.\nOr another audio device."
-                print("VISA Error","Cannot open scope")
+                print("\nVISA Error","Cannot open scope\n")
+                print("Try to ping:",DS_ADDR)
+                sys.exit("ERROR")
 
         # get metadata
         scope.run()
         
-        VoltPerDiv = scope.get_channel_scale(CHANNEL)
+        VoltsOffset = scope.get_channel_offset(CHANNEL)
+        #VoltsOffset = float(scope.query(":CHANnel" + str(CHANNEL) + ":OFFSet?"))
+
+        VoltsPerDiv = scope.get_channel_scale(CHANNEL)
 
         TimebasePerDiv = scope.timebase_scale
         
@@ -508,7 +561,7 @@ def Sweep():   # Read samples and store the data into the arrays
         
         logData()
 
-        UpdateScreen()                                  # UpdateScreen() call
+        #UpdateScreen()                                  # UpdateScreen() call
 
         # RUNstatus = 2: Reading audio data from soundcard
         if (RUNstatus == 2):
@@ -528,14 +581,17 @@ def Sweep():   # Read samples and store the data into the arrays
             SAMPLErate = scope.query("ACQ:SRAT?") 
             
             SAMPLErate = float(SAMPLErate)
+            
+            #SIGNAL1 = signals
+            MarkerYvalues[0] = signals[(Marker1x[0]-X0L)*12]
+            MarkerYvalues[1] = signals[(Marker1x[1]-X0L)*12]
+            SIGNAL1 = map_range_numpy(
+              signals,
+              -4*VoltsPerDiv-VoltsOffset,  4*VoltsPerDiv-VoltsOffset,
+              Y0T+GRH , Y0T)
+            #print(SIGNAL1[500])
+            #print(signals[500])
 
-            n = 0
-            SIGNAL1 = []
-            while n < len(signals):#12000 :
-              SIGNAL1.append (translate((signals[n]), 4 * VoltPerDiv, -4 * VoltPerDiv, Y0T, Y0T+GRH))
-              n += 1
-
-            #UpdateAll()  #UpdateScreen()
 
             if SWEEPsingle == True:  # single sweep mode, sweep once then stop
                 SWEEPsingle = False
@@ -551,11 +607,24 @@ def Sweep():   # Read samples and store the data into the arrays
                 RUNstatus = 0                               # Status is stopped
             if RUNstatus == 4:
                 RUNstatus = 1                               # Status is (re)start
-            UpdateScreen()                                  # UpdateScreen() call
+            #UpdateScreen()                                  # UpdateScreen() call
 
+        UpdateScreen()
         # Update tasks and screens by TKinter
         root.update_idletasks()
         root.update()                                       # update screens
+
+def map_range_numpy(data, in_min, in_max, out_min, out_max):
+    """
+    Maps a NumPy array of values from an input range to an output range.
+    """
+    # Convert input list/array to a NumPy array if it isn't already
+    data = np.array(data)
+
+    # Apply the mapping formula
+    mapped_data = (data - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+    return mapped_data
 
 def translate(value, leftMin, leftMax, rightMin, rightMax):
     # Figure out how 'wide' each range is
@@ -631,7 +700,7 @@ def setupChannel(CHANNEL):
 
     cbChannelCoupling.set(scope.query(":CHAN" + str(CHANNEL) + ":COUP?")) 
 
-    scope.set_channel_offset(CHANNEL, 0)
+    #scope.set_channel_offset(CHANNEL, -8)
 
     scope.write(":WAV:SOUR CHAN" + str(CHANNEL) + " \n")
 
@@ -661,9 +730,10 @@ def UpdateScreen():     # Update screen with trace and text
 
 
 def MakeScreen():       # Update the screen with traces and text
-    global VoltPerDiv
+    global VoltsPerDiv
     global VoltsPeakPeak
     global TimebasePerDiv
+    global VoltsOffset
     global SweepNo
     global measFreq
     global measVMAX
@@ -695,8 +765,8 @@ def MakeScreen():       # Update the screen with traces and text
     global COLORaudiomax
     global CANVASwidth
     global CANVASheight
-
-
+    
+    #VoltsOffset = float(scope.query(":CHANnel" + str(CHANNEL) + ":OFFSet?"))
     SweepNo += 1
     # Delete all items on the screen
     ca.delete('all')
@@ -706,13 +776,15 @@ def MakeScreen():       # Update the screen with traces and text
     x1 = X0L
     x2 = X0L + GRW
     x3 = x1+2     # db labels X location
-    VPD = float(VoltPerDiv)
+    VPD = float(VoltsPerDiv)
     VoltsDiv = VPD * 4
+    print(VoltsOffset)
     while (i <= Vdiv):
         y = Y0T + i * GRH/Vdiv
         Dline = [x1,y,x2,y]
         ca.create_line(Dline, fill=COLORgrid)
-        txt = str("{0:.2f}".format(VoltsDiv))+"V"#VoltPerDiv#) #str(db) # db labels
+        #txt = str("{0:.2f}".format(VoltsDiv-VoltsOffset))+"V"#VoltsPerDiv#) #str(db) # db labels
+        txt = str("{0:.2f}".format(VoltsDiv-VoltsOffset))+"V"#VoltsPerDiv#) #str(db) # db labels
         idTXT = ca.create_text (x3, y-5, text=txt, anchor=W, fill=COLORtext)
         VoltsDiv =  VoltsDiv - VPD
         i = i + 1
@@ -732,43 +804,19 @@ def MakeScreen():       # Update the screen with traces and text
         TimeDiv = TimeDiv + SPD
         i = i + 1
         
-    # Draw traces
-    if len(SIGNAL1) > 4: 
-    # Avoid writing lines with 1 coordinate
-        n = 0
-        xpos = 20
-        tt = []
-        while n < 12000:#4098:#1024:
-          tt.append(xpos)
-          tt.append(SIGNAL1[n])
-          n +=  1
-          if (n % 12) == 0:
-            xpos += 1
-          #ca.create_line(T1line, fill=COLORtrace1)            # Write the trace 1
-        ca.create_line(tt, fill=COLORtrace1)            # Write the trace 1
-        #ca.create_line(SIGNAL1, fill=COLORtrace1)            # Write the trace 1
-    if STOREtrace == True and len(T2line) > 4:              # Write the trace 2 if active
-        n = 0
-        ss = []
-        xpos = 20
-        while n < 12000:#4098:#1024:
-          ss.append(xpos)
-          ss.append(T2line[n])
-          #print ( SIGNAL1[n] )
-          n = n + 1#2
-          #xpos += 1
-          if (n % 12) == 0:
-            xpos += 1
-        ca.create_line(ss, fill=COLORtrace2)            # and avoid writing lines with 1 coordinate
- 
     txt = "             Sample rate: " + str(SAMPLErate/1000000) +" MHz"
  
     if(len(SIGNAL1) != 0):
-        Marker1yy0 = SIGNAL1[(Marker1x[0]-X0L)*12   ]
-        Marker1yy1 = SIGNAL1[(Marker1x[1]-X0L)*12   ]
+        MarkerYvalues[0] = math.floor(MarkerYvalues[0] * 100) /100
+        MarkerYvalues[1] = math.floor(MarkerYvalues[1] * 100) /100
+        Marker1yy0 = math.floor(SIGNAL1[(Marker1x[0]-X0L)*12   ] * 100) /100
+        Marker1yy1 = math.floor(SIGNAL1[(Marker1x[1]-X0L)*12   ] * 100) /100
         ca.create_polygon([Marker1x[0],Marker1yy0-3,Marker1x[0]-3,Marker1yy0-15,Marker1x[0]+3,Marker1yy0-15], outline=COLORMarker1, fill=COLORMarker1, width=1)
         ca.create_polygon([Marker1x[1],Marker1yy1-3,Marker1x[1]-3,Marker1yy1-15,Marker1x[1]+3,Marker1yy1-15], outline=COLORMarker1, fill=COLORMarker1, width=1)
-        txt = txt + "    Vert Cursor0:(" + str(Marker1x[0]) + "," + str(Marker1yy0) + ")"  
+        #txt = txt + "    Vert Cursor0:(" + str(Marker1x[0]) + "," + str(Marker1yy0) + ")"  
+        #txt = txt + "    Vert Cursor1:(" + str(Marker1x[1]) + "," + str(Marker1yy1) + ")"  
+        txt = txt + "    Vert Cursor0:(" + str(Marker1x[0]) + "," + str(MarkerYvalues[0]) + ")"  
+        txt = txt + "    Vert Cursor1:(" + str(Marker1x[1]) + "," + str(MarkerYvalues[1]) + ")"  
     #ca.create_line(Marker1x,GRWN,Marker1x,Y0T + GRH,fill=COLORMarker1)
 
     # General information on top of the grid
@@ -779,7 +827,7 @@ def MakeScreen():       # Update the screen with traces and text
 
     # Start and stop frequency and dB/div and trace mode
     txt = "Sweep No: " + str(SweepNo)
-    txt = txt +  "    " + str(VoltPerDiv) + " V/div"
+    txt = txt +  "    " + str(VoltsPerDiv) + " V/div"
     txt = txt + "    Vpp: " + str(myQuantiphy(VoltsPeakPeak,'V')) 
     txt = txt + "     " + str(myQuantiphy(TimebasePerDiv,'S')) + "/div "
 
@@ -801,7 +849,16 @@ def MakeScreen():       # Update the screen with traces and text
     txt1 = "||||||||||||||||||||"   # Bargraph
     le = len(txt1)                  # length of bargraph
 
-    SIGNALlevel = 5
+    #SIGNALlevel = VoltsPeakPeak/ (VPD * 4)
+    vUpperRatio  =  abs((measVMAX + VoltsOffset) / (VPD * 4)) 
+    vLowerRatio  =  abs((measVMIN - VoltsOffset) / (VPD * 4)) 
+    if(vUpperRatio > vLowerRatio):
+      SIGNALlevel = vUpperRatio
+    else:
+      SIGNALlevel = vLowerRatio
+      
+    print(VoltsPeakPeak,SIGNALlevel,VPD)
+    #SIGNALlevel = 0.5
     t = int(math.sqrt(SIGNALlevel) * le)
 
     n = 0
@@ -836,12 +893,12 @@ def MakeScreen():       # Update the screen with traces and text
 # show the values at the mouse cursor
 # note the magic numbers below were determined by looking at the cursor values
 # not sure why they don't correspond to X0T and Y0T
-    VPD = float(VoltPerDiv)
+    VPD = float(VoltsPerDiv)
     VoltsDivOffset = VPD * 4
     #VoltsDiv =  VoltsDiv - VPD
     
     cursorx = ((root.winfo_pointerx()-root.winfo_rootx()-X0L-4)*10 )*float(TimebasePerDiv)/GRWN
-    cursory = ((root.winfo_pointery()-root.winfo_rooty()-Y0T-50)*float(VoltPerDiv)*(-8)/GRH)+VoltsDivOffset
+    cursory = ((root.winfo_pointery()-root.winfo_rooty()-Y0T-50)*float(VoltsPerDiv)*(-8)/GRH)+VoltsDivOffset
     cursorx = ("{0:.4f}".format(cursorx))
     txt = "Cursor " + str(Quantity(cursorx,"s"))   + "  " +  str(Quantity(cursory,"V")) 
 
@@ -850,6 +907,39 @@ def MakeScreen():       # Update the screen with traces and text
     idTXT = ca.create_text (x, y, text=txt, anchor=W, fill=COLORtext)
     ca.create_line(Marker1x[0],Y0T,Marker1x[0],GRHN+Y0T,fill=COLORMarker1)
     ca.create_line(Marker1x[1],Y0T,Marker1x[1],GRHN+Y0T,fill=COLORMarker1)
+
+
+    # Draw traces
+    if len(SIGNAL1) > 4: 
+    # Avoid writing lines with 1 coordinate
+
+        n = 0
+        xpos = 20
+        tt = []
+        while n < 12000:#4098:#1024:
+          tt.append(xpos)
+          tt.append(SIGNAL1[n])
+         
+          n +=  1
+          if (n % 12) == 0:
+            xpos += 1
+            #print ( SIGNAL1[n-1] )
+          #ca.create_line(T1line, fill=COLORtrace1)            # Write the trace 1
+        ca.create_line(tt, fill=COLORtrace1)            # Write the trace 1
+        #ca.create_line(SIGNAL1, fill=COLORtrace1)            # Write the trace 1
+    if STOREtrace == True and len(T2line) > 4:              # Write the trace 2 if active
+        n = 0
+        ss = []
+        xpos = 20
+        while n < 12000:#4098:#1024:
+          ss.append(xpos)
+          ss.append(T2line[n])
+          #print ( SIGNAL1[n] )
+          n = n + 1#2
+          #xpos += 1
+          if (n % 12) == 0:
+            xpos += 1
+        ca.create_line(ss, fill=COLORtrace2)            # and avoid writing lines with 1 coordinate
     
 
 # ================ Make Screen ==========================
@@ -943,16 +1033,26 @@ b.pack(side=LEFT, padx=5, pady=5)
 b = Button(frame3, text="RESET Scope", width=Buttonwidth1, command=BReset)
 b.pack(side=LEFT, padx=5, pady=5)
 
-b = Button(frame3, text="s/div*2", width=Buttonwidth2, command=Blevel4)
+b = Button(frame3, text="s/div*2", width=Buttonwidth2, command=buttTimebaseUp)
 b.pack(side=RIGHT, padx=5, pady=5)
 
-b = Button(frame3, text="s/div/2", width=Buttonwidth2, command=Blevel3)
+b = Button(frame3, text="s/div/2", width=Buttonwidth2, command=buttTimebaseDown)
 b.pack(side=RIGHT, padx=5, pady=5)
 
-b = Button(frame3, text="V/div+", width=Buttonwidth2, command=Blevel2)
+b = Button(frame3, text="V/div+", width=Buttonwidth2, command=buttScaleUp)
 b.pack(side=RIGHT, padx=5, pady=5)
 
-b = Button(frame3, text="V/div-", width=Buttonwidth2, command=Blevel1)
+b = Button(frame3, text="V/div-", width=Buttonwidth2, command=buttScaleDown)
+b.pack(side=RIGHT, padx=5, pady=5)
+
+
+b = Button(frame3, text="V/offset+", width=Buttonwidth2, command=buttOffsetUp)
+b.pack(side=RIGHT, padx=5, pady=5)
+
+b = Button(frame3, text="V/offset-", width=Buttonwidth2, command=buttOffsetDown)
+b.pack(side=RIGHT, padx=5, pady=5)
+
+b = Button(frame3, text="0-offset", width=Buttonwidth2, command=buttOffsetZero)
 b.pack(side=RIGHT, padx=5, pady=5)
 
 # ================ Call main routine ===============================
