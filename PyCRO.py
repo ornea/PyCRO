@@ -526,7 +526,7 @@ def Sweep():   # Read samples and store the data into the arrays
                 sys.exit("ERROR")
 
         # get metadata
-        scope.run()
+        #scope.run()
         
         VoltsOffset = scope.get_channel_offset(CHANNEL)
         #VoltsOffset = float(scope.query(":CHANnel" + str(CHANNEL) + ":OFFSet?"))
@@ -574,13 +574,15 @@ def Sweep():   # Read samples and store the data into the arrays
             root.update()       # update screen
 
             data_size = 0
+            
             signals = scope.get_waveform_samples(CHANNEL, mode='RAW')
+            #signals = scope.get_waveform_samples(CHANNEL, mode='NORMal')
             data_size = len(signals)
             scope.run()
             
-            SAMPLErate = scope.query("ACQ:SRAT?") 
+            #SAMPLErate = scope.query("ACQ:SRAT?") 
             
-            SAMPLErate = float(SAMPLErate)
+            SAMPLErate = scope.sample_rate #float(SAMPLErate)
             
             #SIGNAL1 = signals
             MarkerYvalues[0] = signals[(Marker1x[0]-X0L)*12]
@@ -612,7 +614,7 @@ def Sweep():   # Read samples and store the data into the arrays
         UpdateScreen()
         # Update tasks and screens by TKinter
         root.update_idletasks()
-        root.update()                                       # update screens
+        #root.update()                                       # update screens
 
 def map_range_numpy(data, in_min, in_max, out_min, out_max):
     """
@@ -788,7 +790,6 @@ def MakeScreen():       # Update the screen with traces and text
         idTXT = ca.create_text (x3, y-5, text=txt, anchor=W, fill=COLORtext)
         VoltsDiv =  VoltsDiv - VPD
         i = i + 1
-
     # Draw vertical grid lines
     i = 0
     y1 = Y0T
@@ -849,6 +850,13 @@ def MakeScreen():       # Update the screen with traces and text
     txt1 = "||||||||||||||||||||"   # Bargraph
     le = len(txt1)                  # length of bargraph
 
+    upper = VPD * 4 -VoltsOffset
+    lower = upper - 8*VPD
+
+    ratioOfScreen = (measVMAX - measVMIN)/(upper-lower)
+
+    print(upper,lower)
+
     #SIGNALlevel = VoltsPeakPeak/ (VPD * 4)
     vUpperRatio  =  abs((measVMAX + VoltsOffset) / (VPD * 4)) 
     vLowerRatio  =  abs((measVMIN - VoltsOffset) / (VPD * 4)) 
@@ -856,8 +864,9 @@ def MakeScreen():       # Update the screen with traces and text
       SIGNALlevel = vUpperRatio
     else:
       SIGNALlevel = vLowerRatio
-      
-    print(VoltsPeakPeak,SIGNALlevel,VPD)
+    
+    SIGNALlevel = ratioOfScreen
+    print(VoltsPeakPeak,SIGNALlevel,VPD,VoltsOffset)
     #SIGNALlevel = 0.5
     t = int(math.sqrt(SIGNALlevel) * le)
 
@@ -916,7 +925,8 @@ def MakeScreen():       # Update the screen with traces and text
         n = 0
         xpos = 20
         tt = []
-        while n < 12000:#4098:#1024:
+        #while n < 12000:#4098:#1024:
+        while n < len(SIGNAL1):#4098:#1024:
           tt.append(xpos)
           tt.append(SIGNAL1[n])
          
@@ -931,7 +941,8 @@ def MakeScreen():       # Update the screen with traces and text
         n = 0
         ss = []
         xpos = 20
-        while n < 12000:#4098:#1024:
+        #while n < 12000:#4098:#1024:
+        while n < len(SIGNAL1):#4098:#1024:
           ss.append(xpos)
           ss.append(T2line[n])
           #print ( SIGNAL1[n] )
